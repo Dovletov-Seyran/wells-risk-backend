@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавление критерия</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+<header class="page-header">
+    <h1 class="page-header__title">Новый критерий</h1>
+    <p class="page-header__subtitle">Статус: {{ .criterion.CriterionStatus }}</p>
+</header>
+
+<main class="draft">
+    <section class="draft__section">
+        <h2 class="draft__legend">Изображение критерия</h2>
+        <img class="draft__preview" src="{{ .criterion.ImageURL }}" alt="Изображение критерия">
+        <input class="draft__file" type="file" name="criterionImage" accept="image/*">
+    </section>
+
+    <section class="draft__section">
+        <h2 class="draft__legend">Видео критерия</h2>
+        <video class="draft__preview" src="{{ .criterion.VideoURL }}"
+               poster="{{ .criterion.ImageURL }}" controls muted playsinline></video>
+        <input class="draft__file" type="file" name="criterionVideo" accept="video/*">
+    </section>
+
+    <section class="draft__section">
+        <h2 class="draft__legend">Описание</h2>
+
+        <label class="draft__label" for="criterionName">Формулировка критерия</label>
+        <input class="draft__input" id="criterionName" type="text"
+               name="criterionName" value="{{ .criterion.CriterionName }}">
+
+        <label class="draft__label" for="shortDescription">Краткое описание</label>
+        <textarea class="draft__input draft__input--area" id="shortDescription"
+                  name="shortDescription" rows="3">{{ .criterion.ShortDescription }}</textarea>
+    </section>
+
+    <section class="draft__section">
+        <h2 class="draft__legend">Параметры оценки</h2>
+
+        <label class="draft__label" for="wellsPoints">Вес критерия, баллов</label>
+        <input class="draft__input" id="wellsPoints" type="text"
+               name="wellsPoints" value="{{ .criterion.WellsPoints }}">
+
+        <label class="draft__label" for="scaleType">Шкала</label>
+        <input class="draft__input" id="scaleType" type="text"
+               name="scaleType" value="{{ .criterion.ScaleType }}" placeholder="ТГВ или ТЭЛА">
+
+        <label class="draft__label" for="criterionGroup">Группа критерия</label>
+        <input class="draft__input" id="criterionGroup" type="text"
+               name="criterionGroup" value="{{ .criterion.CriterionGroup }}">
+
+        <label class="draft__label" for="assessmentMethod">Способ выявления</label>
+        <input class="draft__input" id="assessmentMethod" type="text"
+               name="assessmentMethod" value="{{ .criterion.AssessmentMethod }}">
+    </section>
+
+    <button class="draft__submit" type="button" disabled>Опубликовать критерий</button>
+    <p class="draft__hint">Сохранение появится в следующей лабораторной работе</p>
+</main>
+
+{{ template "tabbar.html" . }}
+</body>
+</html>

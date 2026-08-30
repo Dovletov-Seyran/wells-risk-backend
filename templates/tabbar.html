@@ -1,0 +1,14 @@
+<nav class="tabbar">
+    <a class="tabbar__item {{ if eq .activeTab "feed" }}tabbar__item--active{{ end }}" href="/criteria/feed">
+        <span class="tabbar__icon">▶</span>
+        Лента
+    </a>
+    <a class="tabbar__item {{ if eq .activeTab "draft" }}tabbar__item--active{{ end }}" href="/criteria/draft">
+        <span class="tabbar__icon">＋</span>
+        Добавление
+    </a>
+    <a class="tabbar__item {{ if eq .activeTab "tiles" }}tabbar__item--active{{ end }}" href="/criteria">
+        <span class="tabbar__icon">▦</span>
+        Плитка
+    </a>
+</nav>

@@ -1,0 +1,339 @@
+:root {
+    --wells-accent: #117A66;       
+    --wells-accent-hover: #0E6455;  
+    --wells-surface: #FFFFFF;       
+    --wells-background: #F1F4F3;
+    --wells-text: #16202E;          
+    --wells-muted: #5F6F6B;
+
+    --criterion-card-radius: 8px;  
+    --tabbar-height: 64px;
+}
+
+html {
+    background: #dfe5e3;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0 auto;
+    max-width: 430px;
+    min-height: 100vh;
+    padding-bottom: calc(var(--tabbar-height) + 16px);
+    background: var(--wells-background);
+    color: var(--wells-text);
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Шапка страницы */
+.page-header {
+    padding: 20px 16px 8px;
+}
+
+.page-header__title {
+    margin: 0;
+    font-size: 24px;
+    color: var(--wells-accent);
+}
+
+.page-header__subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--wells-muted);
+}
+
+/* Фильтрация */
+.filter {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 4px;
+}
+
+.filter__input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    font-size: 15px;
+    background: var(--wells-surface);
+}
+
+.filter__input:focus {
+    outline: 2px solid var(--wells-accent);
+    border-color: var(--wells-accent);
+}
+
+.filter__button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--wells-accent);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.filter__button:hover {
+    background: var(--wells-accent-hover);
+}
+
+.filter__reset {
+    display: inline-block;
+    padding: 0 16px 8px;
+    font-size: 13px;
+    color: var(--wells-muted);
+}
+
+/* Плитка в два столбца */
+.tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.tile {
+    display: block;
+    background: var(--wells-surface);
+    border-radius: var(--criterion-card-radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 3px rgba(22, 32, 46, 0.12);
+}
+
+.tile:hover {
+    box-shadow: 0 4px 12px rgba(22, 32, 46, 0.2);
+}
+
+.tile__image {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+    background: #dde3ea;
+}
+
+.tile__body {
+    padding: 10px;
+}
+
+.tile__points {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--wells-accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tile__name {
+    margin: 6px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.tile__likes {
+    font-size: 13px;
+    color: var(--wells-muted);
+}
+
+/* Лента */
+.feed {
+    position: relative;
+    height: calc(100vh - var(--tabbar-height));
+    background: #000;
+}
+
+.feed__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.feed__overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px 16px 24px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    color: #fff;
+}
+
+.feed__fields {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.feed__field {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--wells-accent);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.feed__name {
+    margin: 0 0 10px;
+    font-size: 20px;
+    line-height: 1.25;
+}
+
+.feed__summary {
+    cursor: pointer;
+    font-size: 14px;
+    color: #cfe0f5;
+}
+
+.feed__description {
+    margin: 6px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.feed__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+.feed__likes {
+    font-size: 16px;
+}
+
+.feed__next {
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--wells-accent);
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+}
+
+.feed__next:hover {
+    background: var(--wells-accent-hover);
+}
+
+/* Добавление критерия */
+.draft {
+    padding: 8px 16px;
+}
+
+.draft__section {
+    margin-bottom: 16px;
+    padding: 14px;
+    background: var(--wells-surface);
+    border-radius: var(--criterion-card-radius);
+}
+
+.draft__legend {
+    margin: 0 0 10px;
+    font-size: 15px;
+    color: var(--wells-accent);
+}
+
+.draft__preview {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #dde3ea;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.draft__file {
+    width: 100%;
+    font-size: 13px;
+}
+
+.draft__label {
+    display: block;
+    margin: 10px 0 4px;
+    font-size: 13px;
+    color: var(--wells-muted);
+}
+
+.draft__input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+}
+
+.draft__input--area {
+    resize: vertical;
+}
+
+.draft__input:focus {
+    outline: 2px solid var(--wells-accent);
+    border-color: var(--wells-accent);
+}
+
+.draft__submit {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--wells-accent);
+    color: #fff;
+    font-size: 16px;
+    opacity: 0.5;
+}
+
+.draft__hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    text-align: center;
+    color: var(--wells-muted);
+}
+
+/* Панель вкладок */
+.tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    height: var(--tabbar-height);
+    display: flex;
+    background: var(--wells-surface);
+    border-top: 1px solid #d0d7de;
+}
+
+.tabbar__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 12px;
+    text-decoration: none;
+    color: var(--wells-muted);
+}
+
+.tabbar__item:hover {
+    color: var(--wells-accent);
+}
+
+.tabbar__item--active {
+    color: var(--wells-accent);
+    font-weight: 600;
+}
+
+.tabbar__icon {
+    font-size: 18px;
+}

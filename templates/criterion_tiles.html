@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Критерии шкалы Уэллса</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+<header class="page-header">
+    <h1 class="page-header__title">Шкала Уэллса</h1>
+    <p class="page-header__subtitle">Справочник клинических критериев ТГВ и ТЭЛА</p>
+</header>
+
+<form class="filter" action="/criteria" method="GET">
+    <input class="filter__input"
+           type="text"
+           name="minPoints"
+           placeholder="Вес критерия от, баллов"
+           value="{{ .minPointsInput }}">
+    <button class="filter__button" type="submit">Найти</button>
+</form>
+{{ if .minPointsInput }}
+    <a class="filter__reset" href="/criteria">Сбросить фильтр</a>
+{{ end }}
+
+<main class="tiles">
+    {{ range .criteria }}
+        <a class="tile" href="/criteria/feed/{{ .CriterionID }}">
+            <img class="tile__image" src="{{ .ImageURL }}" alt="{{ .CriterionName }}">
+            <div class="tile__body">
+                <span class="tile__points">{{ .PointsLabel }}</span>
+                <h2 class="tile__name">{{ .CriterionName }}</h2>
+                <span class="tile__likes">♥ {{ .LikeCount }}</span>
+            </div>
+        </a>
+    {{ end }}
+</main>
+
+{{ template "tabbar.html" . }}
+</body>
+</html>

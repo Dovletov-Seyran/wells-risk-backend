@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .criterion.CriterionName }}</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body>
+<main class="feed">
+    <video class="feed__video"
+           src="{{ .criterion.VideoURL }}"
+           poster="{{ .criterion.ImageURL }}"
+           autoplay muted loop playsinline></video>
+
+    <div class="feed__overlay">
+        <div class="feed__fields">
+            <span class="feed__field">{{ .criterion.PointsLabel }} балла</span>
+            <span class="feed__field">Шкала {{ .criterion.ScaleType }}</span>
+        </div>
+
+        <h1 class="feed__name">{{ .criterion.CriterionName }}</h1>
+
+        <details class="feed__details">
+            <summary class="feed__summary">Подробнее</summary>
+            <p class="feed__description">{{ .criterion.ShortDescription }}</p>
+            <p class="feed__description">Группа: {{ .criterion.CriterionGroup }}</p>
+            <p class="feed__description">Выявление: {{ .criterion.AssessmentMethod }}</p>
+        </details>
+
+        <div class="feed__actions">
+            <span class="feed__likes">♥ {{ .criterion.LikeCount }}</span>
+            <a class="feed__next" href="/criteria/feed/{{ .criterion.CriterionID }}?next=true">
+                Следующий критерий
+            </a>
+        </div>
+    </div>
+</main>
+
+{{ template "tabbar.html" . }}
+</body>
+</html>
