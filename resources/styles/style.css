@@ -20,13 +20,21 @@ html {
 
 
 body {
-    margin: 0 auto;
-    max-width: 430px;
-    min-height: 100vh;
-    padding-bottom: calc(var(--tabbar-height) + 16px);
-    background: var(--wells-background);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    background: #dfe5e3;
     color: var(--wells-text);
     font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+}
+
+/* Рамка телефона: размер фиксирован */
+.phone {
+    position: relative;
+    width: 430px;
+    height: 844px;
+    overflow-y: auto;
+    background: var(--wells-background);
 }
 
 /* Шапка страницы */
@@ -147,7 +155,7 @@ body {
 /* Лента */
 .feed {
     position: relative;
-    height: calc(100vh - var(--tabbar-height));
+    height: calc(884px - var(--tabbar-height));
     background: #000;
 }
 
@@ -302,12 +310,9 @@ body {
 
 /* Панель вкладок */
 .tabbar {
-    position: fixed;
+    position: sticky;
     bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
     width: 100%;
-    max-width: 430px;
     height: var(--tabbar-height);
     display: flex;
     background: var(--wells-surface);
