@@ -17,7 +17,7 @@ func seedCriteria() []WellsCriterion {
 			CriterionStatus: StatusPublished, CreatedAt: createdOn(10), LikedByPhysicians: []int{1, 2, 4},
 		},
 		{
-			CriterionID: 2, CriterionName: "Постельный режим более 3 дней или операция за 12 недель",
+			CriterionID: 2, CriterionName: "Постельный режим или операция за 12 недель",
 			ShortDescription: "Учитывается операция под общей или регионарной анестезией.",
 			WellsPoints:      1, ScaleType: "ТГВ", CriterionGroup: "анамнез",
 			AssessmentMethod: "опрос пациента и медицинская документация",
