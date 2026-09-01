@@ -1,7 +1,7 @@
 :root {
-    /* Цвета сняты с mdcalc.com/calc/362/wells-criteria-dvt */
+    /* Цвета с mdcalc.com/calc/362/wells-criteria-dvt */
     --wells-accent: #117A66;        /* --color-primary-600, фон кнопки */
-    --wells-accent-hover: #0D6A58;  /* --color-primary-700, наведение */
+    --wells-accent-hover: #0D6A58;  /* --color-primary-700, hover */
     --wells-surface: #FFFFFF;       /* фон карточки критерия */
     --wells-background: #F1F4F3;
     --wells-text: #181D27;          /* цвет заголовка страницы */
