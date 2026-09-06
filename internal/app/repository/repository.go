@@ -25,9 +25,7 @@ type WellsCriterion struct {
 	CriterionName     string
 	ShortDescription  string  // как трактовать критерий у постели больного
 	WellsPoints       float64 // вес критерия: +3, +1.5, +1, -2
-	ScaleType         string  // ТГВ или ТЭЛА
 	CriterionGroup    string  // анамнез, осмотр, пальпация, измерение
-	AssessmentMethod  string  // чем выявляется критерий
 	ImageKey          string  // ключ файла изображения в Minio
 	VideoKey          string  // ключ файла видео в Minio
 	CriterionStatus   CriterionStatus

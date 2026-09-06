@@ -36,7 +36,7 @@ func (h *Handler) GetCriterionTiles(ctx *gin.Context) {
 		logrus.Error(err)
 	}
 
-	ctx.HTML(http.StatusOK, "criterion_tiles.html", gin.H{
+	ctx.HTML(http.StatusOK, "criteria_tiles.html", gin.H{
 		"criteria":       criteria,
 		"minPointsInput": minPointsInput,
 		"activeTab":      "tiles",
@@ -72,7 +72,7 @@ func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "criterion_feed.html", gin.H{
+	ctx.HTML(http.StatusOK, "criteria_feed.html", gin.H{
 		"criterion": criterion,
 		"activeTab": "feed",
 	})
@@ -86,7 +86,7 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "criterion_draft.html", gin.H{
+	ctx.HTML(http.StatusOK, "criteria_draft.html", gin.H{
 		"criterion": criterion,
 		"activeTab": "draft",
 	})
