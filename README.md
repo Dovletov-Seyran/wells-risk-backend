@@ -15,4 +15,4 @@
 
 | № | Тема | Ветка |
 |---|---|---|
-| 1 | Дизайн в Figma, шаблонизация, Minio | [`lab1-wells-criteria`](../../tree/lab1-wells-criteria) |
+| 1 | Дизайн, шаблонизация, Minio | [`lab1-criteria-templating`](../../tree/lab1-criteria-templating) |
