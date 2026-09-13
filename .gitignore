@@ -3,3 +3,4 @@
 .vscode/
 wells-risk-backend
 *.exe
+.env
