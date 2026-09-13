@@ -2,156 +2,191 @@ package repository
 
 import (
 	"fmt"
-	"sort"
-	"strconv"
 	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"wells-risk-backend/internal/app/ds"
 )
-
-const (
-	minioPublicURL = "http://localhost:9000"
-	minioBucket    = "wells-criteria"
-)
-
-type CriterionStatus string
-
-const (
-	StatusDraft     CriterionStatus = "черновик"
-	StatusPublished CriterionStatus = "опубликован"
-	StatusDeleted   CriterionStatus = "удалён"
-)
-
-type WellsCriterion struct {
-	CriterionID       int
-	CriterionName     string
-	ShortDescription  string  // как трактовать критерий у постели больного
-	WellsPoints       float64 // вес критерия: +3, +1.5, +1, -2
-	CriterionGroup    string  // анамнез, осмотр, пальпация, измерение
-	ImageKey          string  // ключ файла изображения в Minio
-	VideoKey          string  // ключ файла видео в Minio
-	CriterionStatus   CriterionStatus
-	CreatedAt         time.Time
-	LikedByPhysicians []int // ID врачей, отметивших критерий полезным
-}
-
-func (c WellsCriterion) LikeCount() int {
-	return len(c.LikedByPhysicians)
-}
-
-func (c WellsCriterion) PointsLabel() string {
-	text := strconv.FormatFloat(c.WellsPoints, 'g', -1, 64)
-	if c.WellsPoints > 0 {
-		return "+" + text
-	}
-	return text
-}
-
-func (c WellsCriterion) ImageURL() string {
-	key := c.ImageKey
-	if key == "" {
-		key = "no_image"
-	}
-	return fmt.Sprintf("%s/%s/%s.jpg", minioPublicURL, minioBucket, key)
-}
-
-func (c WellsCriterion) VideoURL() string {
-	if c.VideoKey == "" {
-		return ""
-	}
-	return fmt.Sprintf("%s/%s/%s.mp4", minioPublicURL, minioBucket, c.VideoKey)
-}
 
 type Repository struct {
-	criteria []WellsCriterion
+	db *gorm.DB
 }
 
-func NewRepository() (*Repository, error) {
-	criteria := seedCriteria()
-	if len(criteria) == 0 {
-		return nil, fmt.Errorf("коллекция критериев пуста")
-	}
-
-	return &Repository{criteria: criteria}, nil
-}
-
-func (r *Repository) GetPublishedCriteria() ([]WellsCriterion, error) {
-	result := make([]WellsCriterion, 0)
-	for _, criterion := range r.criteria {
-		if criterion.CriterionStatus == StatusPublished {
-			result = append(result, criterion)
-		}
-	}
-
-	if len(result) == 0 {
-		return nil, fmt.Errorf("опубликованных критериев не найдено")
-	}
-
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].CriterionID < result[j].CriterionID
-	})
-
-	return result, nil
-}
-
-func (r *Repository) GetCriteriaByMinPoints(minPoints float64) ([]WellsCriterion, error) {
-	criteria, err := r.GetPublishedCriteria()
+// New открывает подключение к PostgreSQL по строке подключения.
+func New(dsn string) (*Repository, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]WellsCriterion, 0)
-	for _, criterion := range criteria {
-		if criterion.WellsPoints >= minPoints {
-			result = append(result, criterion)
-		}
-	}
-
-	return result, nil
+	return &Repository{db: db}, nil
 }
 
-func (r *Repository) GetCriterion(criterionID int) (WellsCriterion, error) {
-	for _, criterion := range r.criteria {
-		if criterion.CriterionID != criterionID {
-			continue
-		}
-		if criterion.CriterionStatus == StatusDeleted {
-			return WellsCriterion{}, fmt.Errorf("критерий %d удалён из справочника", criterionID)
-		}
-		return criterion, nil
-	}
+// GetPublishedCriteria возвращает опубликованные критерии для страницы-плитки.
+func (r *Repository) GetPublishedCriteria() ([]ds.WellsCriterion, error) {
+	var criteria []ds.WellsCriterion
 
-	return WellsCriterion{}, fmt.Errorf("критерий %d не найден", criterionID)
-}
-
-func (r *Repository) GetFirstCriterion() (WellsCriterion, error) {
-	criteria, err := r.GetPublishedCriteria()
+	err := r.db.
+		Where("criterion_status = ?", ds.StatusPublished).
+		Order("criterion_id").
+		Find(&criteria).Error
 	if err != nil {
-		return WellsCriterion{}, err
+		return nil, err
 	}
 
-	return criteria[0], nil
+	if err := r.fillLikeCounts(criteria); err != nil {
+		return nil, err
+	}
+
+	return criteria, nil
 }
 
-func (r *Repository) GetNextCriterion(afterCriterionID int) (WellsCriterion, error) {
-	criteria, err := r.GetPublishedCriteria()
+// GetCriteriaByMinPoints — поиск: опубликованные критерии весом не ниже заданного.
+func (r *Repository) GetCriteriaByMinPoints(minPoints float64) ([]ds.WellsCriterion, error) {
+	var criteria []ds.WellsCriterion
+
+	err := r.db.
+		Where("criterion_status = ? AND wells_points >= ?", ds.StatusPublished, minPoints).
+		Order("criterion_id").
+		Find(&criteria).Error
 	if err != nil {
-		return WellsCriterion{}, err
+		return nil, err
 	}
 
-	for _, criterion := range criteria {
-		if criterion.CriterionID > afterCriterionID {
-			return criterion, nil
-		}
+	if err := r.fillLikeCounts(criteria); err != nil {
+		return nil, err
 	}
 
-	return criteria[0], nil
+	return criteria, nil
 }
 
-func (r *Repository) GetDraftCriterion() (WellsCriterion, error) {
-	for _, criterion := range r.criteria {
-		if criterion.CriterionStatus == StatusDraft {
-			return criterion, nil
-		}
+// GetCriterion возвращает один критерий. Удалённые не отдаются даже по прямому URL.
+func (r *Repository) GetCriterion(criterionID int) (ds.WellsCriterion, error) {
+	var criterion ds.WellsCriterion
+
+	err := r.db.
+		Where("criterion_id = ? AND criterion_status <> ?", criterionID, ds.StatusDeleted).
+		First(&criterion).Error
+	if err != nil {
+		return ds.WellsCriterion{}, err
 	}
 
-	return WellsCriterion{}, fmt.Errorf("черновик критерия не найден")
+	return r.withLikeCount(criterion)
+}
+
+// GetFirstCriterion — первый опубликованный критерий, точка входа в ленту.
+func (r *Repository) GetFirstCriterion() (ds.WellsCriterion, error) {
+	var criterion ds.WellsCriterion
+
+	err := r.db.
+		Where("criterion_status = ?", ds.StatusPublished).
+		Order("criterion_id").
+		First(&criterion).Error
+	if err != nil {
+		return ds.WellsCriterion{}, err
+	}
+
+	return r.withLikeCount(criterion)
+}
+
+// GetNextCriterion — следующий критерий в ленте, после последнего идёт первый.
+func (r *Repository) GetNextCriterion(afterCriterionID int) (ds.WellsCriterion, error) {
+	var criterion ds.WellsCriterion
+
+	err := r.db.
+		Where("criterion_status = ? AND criterion_id > ?", ds.StatusPublished, afterCriterionID).
+		Order("criterion_id").
+		First(&criterion).Error
+
+	if err == gorm.ErrRecordNotFound {
+		return r.GetFirstCriterion()
+	}
+	if err != nil {
+		return ds.WellsCriterion{}, err
+	}
+
+	return r.withLikeCount(criterion)
+}
+
+// GetDraftCriterion — черновик для страницы добавления.
+func (r *Repository) GetDraftCriterion() (ds.WellsCriterion, error) {
+	var criterion ds.WellsCriterion
+
+	err := r.db.
+		Where("criterion_status = ?", ds.StatusDraft).
+		Order("criterion_id").
+		First(&criterion).Error
+	if err != nil {
+		return ds.WellsCriterion{}, err
+	}
+
+	return r.withLikeCount(criterion)
+}
+
+// countLikes считает отметки врачей по таблице связи многие-ко-многим.
+func (r *Repository) countLikes(criterionID int) (int, error) {
+	var count int64
+
+	err := r.db.Model(&ds.CriterionLike{}).
+		Where("criterion_id = ?", criterionID).
+		Count(&count).Error
+
+	return int(count), err
+}
+
+func (r *Repository) withLikeCount(criterion ds.WellsCriterion) (ds.WellsCriterion, error) {
+	count, err := r.countLikes(criterion.CriterionID)
+	if err != nil {
+		return ds.WellsCriterion{}, err
+	}
+
+	criterion.LikeCount = count
+	return criterion, nil
+}
+
+func (r *Repository) fillLikeCounts(criteria []ds.WellsCriterion) error {
+	for i := range criteria {
+		count, err := r.countLikes(criteria[i].CriterionID)
+		if err != nil {
+			return err
+		}
+		criteria[i].LikeCount = count
+	}
+	return nil
+}
+
+// CreateCriterion — четвёртый метод задания: INSERT новой карточки через ORM.
+func (r *Repository) CreateCriterion(criterion *ds.WellsCriterion) error {
+	return r.db.Create(criterion).Error
+}
+
+// PublishCriterion — пятый метод: UPDATE статуса через ORM.
+func (r *Repository) PublishCriterion(criterionID int) error {
+	now := time.Now()
+
+	result := r.db.Model(&ds.WellsCriterion{}).
+		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
+		Updates(map[string]interface{}{
+			"criterion_status": ds.StatusPublished,
+			"formed_at":        now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("черновик критерия %d не найден", criterionID)
+	}
+
+	return nil
+}
+
+// DeleteCriterion — шестой метод: логическое удаление чистым SQL, без ORM.
+func (r *Repository) DeleteCriterion(criterionID int) error {
+	return r.db.Exec(
+		"UPDATE wells_criteria SET criterion_status = $1 WHERE criterion_id = $2",
+		ds.StatusDeleted, criterionID,
+	).Error
 }

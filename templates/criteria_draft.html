@@ -8,28 +8,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles/style.css?v=2">
+    <link rel="stylesheet" href="/static/styles/style.css?v=3">
 </head>
 
 <body>
     <div class="phone">
         <header class="page-header">
             <h1 class="page-header__title">Новый критерий</h1>
-            <p class="page-header__subtitle">Статус: {{ .criterion.CriterionStatus }}</p>
+            <p class="page-header__subtitle">
+                {{ if .hasDraft }}Статус: {{ .criterion.CriterionStatus }}{{ else }}Черновик ещё не создан{{ end }}
+            </p>
         </header>
 
-        <main class="draft">
+        <form class="draft" action="/criteria/draft" method="POST">
             <section class="draft__section">
                 <h2 class="draft__legend">Изображение критерия</h2>
                 <img class="draft__preview" src="{{ .criterion.ImageURL }}" alt="Изображение критерия">
-                <input class="draft__file" type="file" name="criterionImage" accept="image/*">
             </section>
 
             <section class="draft__section">
                 <h2 class="draft__legend">Видео критерия</h2>
                 <video class="draft__preview" src="{{ .criterion.VideoURL }}" poster="{{ .criterion.ImageURL }}"
                     controls muted playsinline></video>
-                <input class="draft__file" type="file" name="criterionVideo" accept="video/*">
             </section>
 
             <section class="draft__section">
@@ -56,9 +56,19 @@
                     value="{{ .criterion.CriterionGroup }}">
             </section>
 
-            <button class="draft__submit" type="button" disabled>Опубликовать критерий</button>
-            <p class="draft__hint">Сохранение появится в следующей лабораторной работе</p>
-        </main>
+            {{ if not .hasDraft }}
+            <button class="draft__submit" type="submit">Далее</button>
+            <p class="draft__hint">Карточка сохранится в статусе «черновик»</p>
+            {{ end }}
+        </form>
+
+        {{ if .hasDraft }}
+        <form class="draft" action="/criteria/publish" method="POST">
+            <input type="hidden" name="criterionID" value="{{ .criterion.CriterionID }}">
+            <button class="draft__submit" type="submit">Опубликовать критерий</button>
+            <p class="draft__hint">Черновик станет опубликованным критерием справочника</p>
+        </form>
+        {{ end }}
 
         {{ template "tabbar.html" . }}
     </div>

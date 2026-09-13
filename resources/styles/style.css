@@ -408,3 +408,29 @@ body {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+
+.tile-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tile__delete {
+    margin: 0;
+}
+
+.tile__delete-button {
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    border-radius: 0 0 12px 12px;
+    background: #b3261e;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tile__delete-button:active {
+    background: #8c1d18;
+}

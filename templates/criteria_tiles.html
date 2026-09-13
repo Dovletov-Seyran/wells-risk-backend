@@ -29,14 +29,20 @@
 
         <main class="tiles">
             {{ range .criteria }}
-            <a class="tile" href="/criteria/feed/{{ .CriterionID }}">
-                <img class="tile__image" src="{{ .ImageURL }}" alt="{{ .CriterionName }}">
-                <div class="tile__body">
-                    <span class="tile__points">{{ .PointsLabel }}</span>
-                    <h2 class="tile__name">{{ .CriterionName }}</h2>
-                    <span class="tile__likes">♥ {{ .LikeCount }}</span>
-                </div>
-            </a>
+            <div class="tile-card">
+                <a class="tile" href="/criteria/feed/{{ .CriterionID }}">
+                    <img class="tile__image" src="{{ .ImageURL }}" alt="{{ .CriterionName }}">
+                    <div class="tile__body">
+                        <span class="tile__points">{{ .PointsLabel }}</span>
+                        <h2 class="tile__name">{{ .CriterionName }}</h2>
+                        <span class="tile__likes">♥ {{ .LikeCount }}</span>
+                    </div>
+                </a>
+                <form class="tile__delete" action="/criteria/delete" method="POST">
+                    <input type="hidden" name="criterionID" value="{{ .CriterionID }}">
+                    <button class="tile__delete-button" type="submit">Удалить</button>
+                </form>
+            </div>
             {{ end }}
         </main>
 

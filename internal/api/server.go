@@ -9,14 +9,16 @@ import (
 
 	"wells-risk-backend/internal/app/handler"
 	"wells-risk-backend/internal/app/repository"
+
+	"wells-risk-backend/internal/app/dsn"
 )
 
 func StartServer() {
 	log.Println("Server start up")
 
-	repo, err := repository.NewRepository()
+	repo, err := repository.New(dsn.FromEnv())
 	if err != nil {
-		logrus.Error("ошибка инициализации репозитория")
+		logrus.Fatalf("ошибка подключения к базе: %v", err)
 	}
 
 	criterioHandler := handler.NewHandler(repo)
@@ -33,6 +35,9 @@ func StartServer() {
 	r.GET("/criteria/feed", criterioHandler.GetCriterionFeed)
 	r.GET("/criteria/feed/:id", criterioHandler.GetCriterionFeed)
 	r.GET("/criteria/draft", criterioHandler.GetCriterionDraft)
+	r.POST("/criteria/draft", criterioHandler.CreateCriterionDraft)
+	r.POST("/criteria/publish", criterioHandler.PublishCriterion)
+	r.POST("/criteria/delete", criterioHandler.DeleteCriterion)
 
 	r.Run()
 

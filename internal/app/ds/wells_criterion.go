@@ -1,6 +1,7 @@
 package ds
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -18,8 +19,8 @@ type WellsCriterion struct {
 	CriterionName    string          `gorm:"type:varchar(150);not null;column:criterion_name"`
 	ShortDescription string          `gorm:"type:varchar(500);column:short_description"`
 	CriterionStatus  CriterionStatus `gorm:"type:varchar(20);not null;column:criterion_status"`
-	ImageURL         string          `gorm:"type:varchar(255);column:image_url"`
-	VideoURL         string          `gorm:"type:varchar(255);column:video_url"`
+	ImageKey         string          `gorm:"type:varchar(255);column:image_key"`
+	VideoKey         string          `gorm:"type:varchar(255);column:video_key"`
 	WellsPoints      float64         `gorm:"type:numeric(3,1);column:wells_points"`
 	CriterionGroup   string          `gorm:"type:varchar(50);column:criterion_group"`
 	CreatedAt        time.Time       `gorm:"type:timestamp;not null;column:created_at"`
@@ -41,4 +42,26 @@ func (c WellsCriterion) PointsLabel() string {
 		return "+" + text
 	}
 	return text
+}
+
+const (
+	minioPublicURL = "http://localhost:9000"
+	minioBucket    = "wells-criteria"
+)
+
+// ImageURL собирает адрес изображения в MinIO по ключу.
+func (c WellsCriterion) ImageURL() string {
+	key := c.ImageKey
+	if key == "" {
+		key = "no_image"
+	}
+	return fmt.Sprintf("%s/%s/%s.jpg", minioPublicURL, minioBucket, key)
+}
+
+// VideoURL собирает адрес видео в MinIO по ключу.
+func (c WellsCriterion) VideoURL() string {
+	if c.VideoKey == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s/%s.mp4", minioPublicURL, minioBucket, c.VideoKey)
 }
