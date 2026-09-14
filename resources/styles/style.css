@@ -41,6 +41,8 @@ body {
     height: 844px;
     overflow-y: auto;
     background: var(--wells-background);
+    display: flex;
+    flex-direction: column;
 }
 
 /* Шапка страницы */
@@ -347,8 +349,20 @@ body {
     border-radius: 8px;
     background: var(--wells-accent);
     color: #fff;
+    font-family: inherit;
     font-size: 16px;
-    opacity: 0.5;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.draft__submit:hover {
+    background: var(--wells-accent-hover);
+}
+
+.draft__submit:active {
+    background: var(--wells-accent-hover);
+    transform: translateY(1px);
 }
 
 .draft__hint {
@@ -362,6 +376,8 @@ body {
 .tabbar {
     position: sticky;
     bottom: 0;
+    margin-top: auto;
+    flex-shrink: 0;
     width: 100%;
     height: var(--tabbar-height);
     display: flex;

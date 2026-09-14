@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,8 +28,10 @@ func (h *Handler) GetCriterionTiles(ctx *gin.Context) {
 	var err error
 
 	minPointsInput := ctx.Query("minPoints")
+	normalized := strings.ReplaceAll(minPointsInput, ",", ".")
 
-	minPoints, parseErr := strconv.ParseFloat(minPointsInput, 64)
+	minPoints, parseErr := strconv.ParseFloat(normalized, 64)
+
 	if minPointsInput == "" || parseErr != nil {
 		criteria, err = h.Repository.GetPublishedCriteria()
 	} else {
@@ -93,7 +96,8 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 
 // CreateCriterionDraft — создание карточки критерия в статусе «черновик».
 func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
-	points, err := strconv.ParseFloat(ctx.PostForm("wellsPoints"), 64)
+	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
+	points, err := strconv.ParseFloat(pointsInput, 64)
 	if err != nil {
 		points = 0
 	}
@@ -128,7 +132,19 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Repository.PublishCriterion(criterionID); err != nil {
+	name := strings.TrimSpace(ctx.PostForm("criterionName"))
+	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
+	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
+
+	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
+	points, parseErr := strconv.ParseFloat(pointsInput, 64)
+
+	if name == "" || description == "" || group == "" || parseErr != nil {
+		ctx.String(http.StatusBadRequest, "Заполните все поля критерия перед публикацией")
+		return
+	}
+
+	if err := h.Repository.PublishCriterion(criterionID, name, description, points, group); err != nil {
 		logrus.Error(err)
 		ctx.String(http.StatusNotFound, "Черновик критерия не найден")
 		return

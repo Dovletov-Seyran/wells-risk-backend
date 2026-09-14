@@ -163,14 +163,19 @@ func (r *Repository) CreateCriterion(criterion *ds.WellsCriterion) error {
 }
 
 // PublishCriterion — пятый метод: UPDATE статуса через ORM.
-func (r *Repository) PublishCriterion(criterionID int) error {
+// PublishCriterion — пятый метод: UPDATE полей и статуса через ORM.
+func (r *Repository) PublishCriterion(criterionID int, name, description string, points float64, group string) error {
 	now := time.Now()
 
 	result := r.db.Model(&ds.WellsCriterion{}).
 		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
 		Updates(map[string]interface{}{
-			"criterion_status": ds.StatusPublished,
-			"formed_at":        now,
+			"criterion_name":    name,
+			"short_description": description,
+			"wells_points":      points,
+			"criterion_group":   group,
+			"criterion_status":  ds.StatusPublished,
+			"formed_at":         now,
 		})
 
 	if result.Error != nil {

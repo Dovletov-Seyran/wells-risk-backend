@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles/style.css?v=3">
+    <link rel="stylesheet" href="/static/styles/style.css?v=4">
 </head>
 
 <body>
@@ -19,7 +19,7 @@
         </header>
 
         <form class="filter" action="/criteria" method="GET">
-            <input class="filter__input" type="number" name="minPoints" step="0.5" min="-2" max="3" inputmode="decimal"
+            <input class="filter__input" type="text" inputmode="decimal" name="minPoints"
                 placeholder="Вес критерия от, баллов" value="{{ .minPointsInput }}">
             <button class="filter__button" type="submit">Найти</button>
         </form>
