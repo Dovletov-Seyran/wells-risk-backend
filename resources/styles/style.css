@@ -410,9 +410,22 @@ body {
 }
 
 .tile-card {
-    position: relative;
     display: flex;
     flex-direction: column;
+    background: var(--wells-surface);
+    border-radius: var(--criterion-card-radius);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(22, 32, 46, 0.12);
+}
+
+.tile-card .tile {
+    flex: 1;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.tile-card:hover {
+    box-shadow: 0 4px 12px rgba(22, 32, 46, 0.2);
 }
 
 .tile__delete {
@@ -420,17 +433,26 @@ body {
 }
 
 .tile__delete-button {
+    display: block;
     width: 100%;
-    padding: 8px 0;
+    padding: 10px 0;
     border: none;
-    border-radius: 0 0 12px 12px;
-    background: #b3261e;
-    color: #fff;
+    border-top: 1px solid #E6EBE9;
+    background: transparent;
+    color: var(--wells-muted);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tile__delete-button:hover {
+    background: #FBEFEE;
+    color: #B3261E;
 }
 
 .tile__delete-button:active {
-    background: #8c1d18;
+    background: #F4E0DE;
 }
