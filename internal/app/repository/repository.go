@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,8 @@ import (
 
 	"wells-risk-backend/internal/app/ds"
 )
+
+const currentPhysicianID = 1
 
 type Repository struct {
 	db *gorm.DB
@@ -24,7 +27,7 @@ func New(dsn string) (*Repository, error) {
 	return &Repository{db: db}, nil
 }
 
-// GetPublishedCriteria возвращает опубликованные критерии для страницы-плитки.
+// GetPublishedCriteria возвращает опубликованные критерии для плитки.
 func (r *Repository) GetPublishedCriteria() ([]ds.WellsCriterion, error) {
 	var criteria []ds.WellsCriterion
 
@@ -62,7 +65,7 @@ func (r *Repository) GetCriteriaByMinPoints(minPoints float64) ([]ds.WellsCriter
 	return criteria, nil
 }
 
-// GetCriterion возвращает один критерий. Удалённые не отдаются даже по прямому URL.
+// GetCriterion возвращает один критерий
 func (r *Repository) GetCriterion(criterionID int) (ds.WellsCriterion, error) {
 	var criterion ds.WellsCriterion
 
@@ -76,7 +79,7 @@ func (r *Repository) GetCriterion(criterionID int) (ds.WellsCriterion, error) {
 	return r.withLikeCount(criterion)
 }
 
-// GetFirstCriterion — первый опубликованный критерий, точка входа в ленту.
+// GetFirstCriterion — первый опубликованный критерий
 func (r *Repository) GetFirstCriterion() (ds.WellsCriterion, error) {
 	var criterion ds.WellsCriterion
 
@@ -91,7 +94,7 @@ func (r *Repository) GetFirstCriterion() (ds.WellsCriterion, error) {
 	return r.withLikeCount(criterion)
 }
 
-// GetNextCriterion — следующий критерий в ленте, после последнего идёт первый.
+// GetNextCriterion — следующий критерий в ленте
 func (r *Repository) GetNextCriterion(afterCriterionID int) (ds.WellsCriterion, error) {
 	var criterion ds.WellsCriterion
 
@@ -100,7 +103,7 @@ func (r *Repository) GetNextCriterion(afterCriterionID int) (ds.WellsCriterion, 
 		Order("criterion_id").
 		First(&criterion).Error
 
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return r.GetFirstCriterion()
 	}
 	if err != nil {
@@ -110,12 +113,12 @@ func (r *Repository) GetNextCriterion(afterCriterionID int) (ds.WellsCriterion, 
 	return r.withLikeCount(criterion)
 }
 
-// GetDraftCriterion — черновик для страницы добавления.
+// GetDraftCriterion — черновик текущего врача
 func (r *Repository) GetDraftCriterion() (ds.WellsCriterion, error) {
 	var criterion ds.WellsCriterion
 
 	err := r.db.
-		Where("criterion_status = ?", ds.StatusDraft).
+		Where("criterion_status = ? AND creator_id = ?", ds.StatusDraft, currentPhysicianID).
 		Order("criterion_id").
 		First(&criterion).Error
 	if err != nil {
@@ -125,7 +128,59 @@ func (r *Repository) GetDraftCriterion() (ds.WellsCriterion, error) {
 	return r.withLikeCount(criterion)
 }
 
-// countLikes считает отметки врачей по таблице связи многие-ко-многим.
+// CreateCriterion — INSERT новой карточки
+func (r *Repository) CreateCriterion(criterion *ds.WellsCriterion) error {
+	var drafts int64
+
+	err := r.db.Model(&ds.WellsCriterion{}).
+		Where("criterion_status = ? AND creator_id = ?", ds.StatusDraft, criterion.CreatorID).
+		Count(&drafts).Error
+	if err != nil {
+		return err
+	}
+	if drafts > 0 {
+		return fmt.Errorf("у врача уже есть черновик критерия")
+	}
+
+	return r.db.Create(criterion).Error
+}
+
+// PublishCriterion - UPDATE полей
+func (r *Repository) PublishCriterion(criterionID int, draft ds.WellsCriterion) error {
+	now := time.Now()
+
+	result := r.db.Model(&ds.WellsCriterion{}).
+		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
+		Updates(map[string]interface{}{
+			"criterion_name":    draft.CriterionName,
+			"short_description": draft.ShortDescription,
+			"wells_points":      draft.WellsPoints,
+			"criterion_group":   draft.CriterionGroup,
+			"image_key":         draft.ImageKey,
+			"video_key":         draft.VideoKey,
+			"criterion_status":  ds.StatusPublished,
+			"formed_at":         now,
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("черновик критерия %d не найден", criterionID)
+	}
+
+	return nil
+}
+
+// DeleteCriterion — удаление без ORM
+func (r *Repository) DeleteCriterion(criterionID int) error {
+	return r.db.Exec(
+		"UPDATE wells_criteria SET criterion_status = $1 WHERE criterion_id = $2",
+		ds.StatusDeleted, criterionID,
+	).Error
+}
+
+// countLikes считает отметки врачей
 func (r *Repository) countLikes(criterionID int) (int, error) {
 	var count int64
 
@@ -155,43 +210,4 @@ func (r *Repository) fillLikeCounts(criteria []ds.WellsCriterion) error {
 		criteria[i].LikeCount = count
 	}
 	return nil
-}
-
-// CreateCriterion — четвёртый метод задания: INSERT новой карточки через ORM.
-func (r *Repository) CreateCriterion(criterion *ds.WellsCriterion) error {
-	return r.db.Create(criterion).Error
-}
-
-// PublishCriterion — пятый метод: UPDATE статуса через ORM.
-// PublishCriterion — пятый метод: UPDATE полей и статуса через ORM.
-func (r *Repository) PublishCriterion(criterionID int, name, description string, points float64, group string) error {
-	now := time.Now()
-
-	result := r.db.Model(&ds.WellsCriterion{}).
-		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
-		Updates(map[string]interface{}{
-			"criterion_name":    name,
-			"short_description": description,
-			"wells_points":      points,
-			"criterion_group":   group,
-			"criterion_status":  ds.StatusPublished,
-			"formed_at":         now,
-		})
-
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("черновик критерия %d не найден", criterionID)
-	}
-
-	return nil
-}
-
-// DeleteCriterion — шестой метод: логическое удаление чистым SQL, без ORM.
-func (r *Repository) DeleteCriterion(criterionID int) error {
-	return r.db.Exec(
-		"UPDATE wells_criteria SET criterion_status = $1 WHERE criterion_id = $2",
-		ds.StatusDeleted, criterionID,
-	).Error
 }

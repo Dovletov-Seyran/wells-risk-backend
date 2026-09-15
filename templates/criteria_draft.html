@@ -29,12 +29,18 @@
             <section class="draft__section">
                 <h2 class="draft__legend">Изображение критерия</h2>
                 <img class="draft__preview" src="{{ .criterion.ImageURL }}" alt="Изображение критерия">
+                                <label class="draft__label" for="imageKey">Ключ изображения в MinIO</label>
+                <input class="draft__input" id="imageKey" type="text" name="imageKey" required
+                    placeholder="dvt_signs" value="{{ .criterion.ImageKey }}">
             </section>
 
             <section class="draft__section">
                 <h2 class="draft__legend">Видео критерия</h2>
                 <video class="draft__preview" src="{{ .criterion.VideoURL }}" poster="{{ .criterion.ImageURL }}"
                     controls muted playsinline></video>
+                                <label class="draft__label" for="videoKey">Ключ видео в MinIO</label>
+                <input class="draft__input" id="videoKey" type="text" name="videoKey"
+                    placeholder="dvt_signs" value="{{ .criterion.VideoKey }}">
             </section>
 
             <section class="draft__section">

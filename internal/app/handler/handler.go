@@ -13,6 +13,8 @@ import (
 	"wells-risk-backend/internal/app/repository"
 )
 
+const currentPhysicianID = 1
+
 type Handler struct {
 	Repository *repository.Repository
 }
@@ -94,22 +96,32 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 	})
 }
 
-// CreateCriterionDraft — создание карточки критерия в статусе «черновик».
+// CreateCriterionDraft — создание карточки критерия в статусе черновик
 func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
+	name := strings.TrimSpace(ctx.PostForm("criterionName"))
+	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
+	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
+	imageKey := strings.TrimSpace(ctx.PostForm("imageKey"))
+	videoKey := strings.TrimSpace(ctx.PostForm("videoKey"))
+
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
-	points, err := strconv.ParseFloat(pointsInput, 64)
-	if err != nil {
-		points = 0
+	points, parseErr := strconv.ParseFloat(pointsInput, 64)
+
+	if name == "" || description == "" || group == "" || imageKey == "" || parseErr != nil {
+		ctx.String(http.StatusBadRequest, "Заполните все поля критерия")
+		return
 	}
 
-	creatorID := 1 // пока авторизации нет, черновик заводит первый врач
+	creatorID := currentPhysicianID
 
 	criterion := ds.WellsCriterion{
-		CriterionName:    ctx.PostForm("criterionName"),
-		ShortDescription: ctx.PostForm("shortDescription"),
+		CriterionName:    name,
+		ShortDescription: description,
 		CriterionStatus:  ds.StatusDraft,
+		ImageKey:         imageKey,
+		VideoKey:         videoKey,
 		WellsPoints:      points,
-		CriterionGroup:   ctx.PostForm("criterionGroup"),
+		CriterionGroup:   group,
 		CreatedAt:        time.Now(),
 		CreatorID:        &creatorID,
 	}
@@ -135,16 +147,27 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	name := strings.TrimSpace(ctx.PostForm("criterionName"))
 	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
 	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
+	imageKey := strings.TrimSpace(ctx.PostForm("imageKey"))
+	videoKey := strings.TrimSpace(ctx.PostForm("videoKey"))
 
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
 	points, parseErr := strconv.ParseFloat(pointsInput, 64)
 
-	if name == "" || description == "" || group == "" || parseErr != nil {
+	if name == "" || description == "" || group == "" || imageKey == "" || parseErr != nil {
 		ctx.String(http.StatusBadRequest, "Заполните все поля критерия перед публикацией")
 		return
 	}
 
-	if err := h.Repository.PublishCriterion(criterionID, name, description, points, group); err != nil {
+	draft := ds.WellsCriterion{
+		CriterionName:    name,
+		ShortDescription: description,
+		CriterionGroup:   group,
+		WellsPoints:      points,
+		ImageKey:         imageKey,
+		VideoKey:         videoKey,
+	}
+
+	if err := h.Repository.PublishCriterion(criterionID, draft); err != nil {
 		logrus.Error(err)
 		ctx.String(http.StatusNotFound, "Черновик критерия не найден")
 		return
@@ -153,7 +176,7 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/criteria")
 }
 
-// DeleteCriterion — логическое удаление критерия из справочника.
+// DeleteCriterion — логическое удаление критерия из справочника
 func (h *Handler) DeleteCriterion(ctx *gin.Context) {
 	criterionID, err := strconv.Atoi(ctx.PostForm("criterionID"))
 	if err != nil {
