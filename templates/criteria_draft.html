@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles/style.css?v=5">
+    <link rel="stylesheet" href="/static/styles/style.css?v=6">
 </head>
 
 <body>
@@ -28,19 +28,25 @@
 
             <section class="draft__section">
                 <h2 class="draft__legend">Изображение критерия</h2>
+
+                {{ if .criterion.ImageKey }}
                 <img class="draft__preview" src="{{ .criterion.ImageURL }}" alt="Изображение критерия">
-                                <label class="draft__label" for="imageKey">Ключ изображения в MinIO</label>
-                <input class="draft__input" id="imageKey" type="text" name="imageKey" required
-                    placeholder="dvt_signs" value="{{ .criterion.ImageKey }}">
+                {{ else }}
+                <img class="draft__preview" src="/static/img/no_image.jpg" alt="Изображение критерия не загружено">
+                {{ end }}
+
             </section>
 
             <section class="draft__section">
                 <h2 class="draft__legend">Видео критерия</h2>
+
+                {{ if .criterion.VideoKey }}
                 <video class="draft__preview" src="{{ .criterion.VideoURL }}" poster="{{ .criterion.ImageURL }}"
                     controls muted playsinline></video>
-                                <label class="draft__label" for="videoKey">Ключ видео в MinIO</label>
-                <input class="draft__input" id="videoKey" type="text" name="videoKey"
-                    placeholder="dvt_signs" value="{{ .criterion.VideoKey }}">
+                {{ else }}
+                <img class="draft__preview" src="/static/img/no_image.jpg" alt="Видео критерия не загружено">
+                {{ end }}
+
             </section>
 
             <section class="draft__section">
@@ -48,7 +54,7 @@
 
                 <label class="draft__label" for="criterionName">Формулировка критерия</label>
                 <input class="draft__input" id="criterionName" type="text" name="criterionName" required
-                    placeholder="" value="{{ .criterion.CriterionName }}">
+                    placeholder="Отёк всей нижней конечности" value="{{ .criterion.CriterionName }}">
 
                 <label class="draft__label" for="shortDescription">Краткое описание</label>
                 <textarea class="draft__input draft__input--area" id="shortDescription" name="shortDescription" required

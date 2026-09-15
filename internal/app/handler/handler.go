@@ -107,7 +107,7 @@ func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
 	points, parseErr := strconv.ParseFloat(pointsInput, 64)
 
-	if name == "" || description == "" || group == "" || imageKey == "" || parseErr != nil {
+	if name == "" || description == "" || group == "" || parseErr != nil {
 		ctx.String(http.StatusBadRequest, "Заполните все поля критерия")
 		return
 	}
@@ -153,7 +153,7 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
 	points, parseErr := strconv.ParseFloat(pointsInput, 64)
 
-	if name == "" || description == "" || group == "" || imageKey == "" || parseErr != nil {
+	if name == "" || description == "" || group == "" || parseErr != nil {
 		ctx.String(http.StatusBadRequest, "Заполните все поля критерия перед публикацией")
 		return
 	}

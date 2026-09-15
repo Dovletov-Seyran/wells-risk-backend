@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles/style.css?v=4">
+    <link rel="stylesheet" href="/static/styles/style.css?v=6">
 </head>
 
 <body>
@@ -31,7 +31,11 @@
             {{ range .criteria }}
             <div class="tile-card">
                 <a class="tile" href="/criteria/feed/{{ .CriterionID }}">
+                    {{ if .ImageKey }}
                     <img class="tile__image" src="{{ .ImageURL }}" alt="{{ .CriterionName }}">
+                    {{ else }}
+                    <img class="tile__image" src="/static/img/no_image.jpg" alt="Изображение критерия не загружено">
+                    {{ end }}
                     <div class="tile__body">
                         <span class="tile__points">{{ .PointsLabel }}</span>
                         <h2 class="tile__name">{{ .CriterionName }}</h2>
