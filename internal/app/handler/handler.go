@@ -98,32 +98,13 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 
 // CreateCriterionDraft — создание карточки критерия в статусе черновик
 func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
-	name := strings.TrimSpace(ctx.PostForm("criterionName"))
-	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
-	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
-	imageKey := strings.TrimSpace(ctx.PostForm("imageKey"))
-	videoKey := strings.TrimSpace(ctx.PostForm("videoKey"))
-
-	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
-	points, parseErr := strconv.ParseFloat(pointsInput, 64)
-
-	if name == "" || description == "" || group == "" || parseErr != nil {
-		ctx.String(http.StatusBadRequest, "Заполните все поля критерия")
-		return
-	}
-
 	creatorID := currentPhysicianID
 
 	criterion := ds.WellsCriterion{
-		CriterionName:    name,
-		ShortDescription: description,
-		CriterionStatus:  ds.StatusDraft,
-		ImageKey:         imageKey,
-		VideoKey:         videoKey,
-		WellsPoints:      points,
-		CriterionGroup:   group,
-		CreatedAt:        time.Now(),
-		CreatorID:        &creatorID,
+		CriterionName:   "Без названия",
+		CriterionStatus: ds.StatusDraft,
+		CreatedAt:       time.Now(),
+		CreatorID:       &creatorID,
 	}
 
 	if err := h.Repository.CreateCriterion(&criterion); err != nil {
@@ -192,4 +173,22 @@ func (h *Handler) DeleteCriterion(ctx *gin.Context) {
 	}
 
 	ctx.Redirect(http.StatusFound, "/criteria")
+}
+
+// CancelDraft — возврат к первому шагу: черновик отменяется.
+func (h *Handler) CancelDraft(ctx *gin.Context) {
+	criterionID, err := strconv.Atoi(ctx.PostForm("criterionID"))
+	if err != nil {
+		logrus.Error(err)
+		ctx.String(http.StatusBadRequest, "Некорректный идентификатор критерия")
+		return
+	}
+
+	if err := h.Repository.CancelDraft(criterionID); err != nil {
+		logrus.Error(err)
+		ctx.String(http.StatusInternalServerError, "Не удалось отменить черновик")
+		return
+	}
+
+	ctx.Redirect(http.StatusFound, "/criteria/draft")
 }

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles/style.css?v=6">
+    <link rel="stylesheet" href="/static/styles/style.css?v=10">
 </head>
 
 <body>
@@ -19,10 +19,23 @@
         </header>
 
         <form class="filter" action="/criteria" method="GET">
-            <input class="filter__input" type="text" inputmode="decimal" name="minPoints"
-                placeholder="Вес критерия от, баллов" value="{{ .minPointsInput }}">
+            <label class="filter__label" for="minPoints">
+                Вес критерия от
+                <output class="filter__value" id="minPointsValue">{{ if .minPointsInput }}{{ .minPointsInput }}{{ else }}-2{{ end }}</output>
+                баллов
+            </label>
+
+            <div class="filter__row">
+                <span class="filter__edge">-2</span>
+                <input class="filter__range" id="minPoints" type="range" name="minPoints" min="-2" max="3" step="0.5"
+                    value="{{ if .minPointsInput }}{{ .minPointsInput }}{{ else }}-2{{ end }}"
+                    oninput="document.getElementById('minPointsValue').textContent = this.value">
+                <span class="filter__edge">+3</span>
+            </div>
+
             <button class="filter__button" type="submit">Найти</button>
         </form>
+
         {{ if .minPointsInput }}
         <a class="filter__reset" href="/criteria">Сбросить фильтр</a>
         {{ end }}

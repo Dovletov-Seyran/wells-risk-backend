@@ -38,6 +38,7 @@ func StartServer() {
 	r.POST("/criteria/draft", criterioHandler.CreateCriterionDraft)
 	r.POST("/criteria/publish", criterioHandler.PublishCriterion)
 	r.POST("/criteria/delete", criterioHandler.DeleteCriterion)
+	r.POST("/criteria/draft/cancel", criterioHandler.CancelDraft)
 
 	r.Run()
 

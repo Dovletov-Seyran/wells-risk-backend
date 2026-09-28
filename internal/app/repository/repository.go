@@ -211,3 +211,10 @@ func (r *Repository) fillLikeCounts(criteria []ds.WellsCriterion) error {
 	}
 	return nil
 }
+
+// CancelDraft удаляет незавершённый черновик при возврате к выбору файлов.
+func (r *Repository) CancelDraft(criterionID int) error {
+	return r.db.
+		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
+		Delete(&ds.WellsCriterion{}).Error
+}
