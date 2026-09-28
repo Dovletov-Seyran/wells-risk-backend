@@ -1,19 +1,16 @@
 package handler
 
 import (
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	"wells-risk-backend/internal/app/ds"
 	"wells-risk-backend/internal/app/repository"
 )
-
-const currentPhysicianID = 1
 
 type Handler struct {
 	Repository *repository.Repository
@@ -25,166 +22,74 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
-func (h *Handler) GetCriterionTiles(ctx *gin.Context) {
-	var criteria []ds.WellsCriterion
-	var err error
-
-	minPointsInput := ctx.Query("minPoints")
-	normalized := strings.ReplaceAll(minPointsInput, ",", ".")
-
-	minPoints, parseErr := strconv.ParseFloat(normalized, 64)
-
-	if minPointsInput == "" || parseErr != nil {
-		criteria, err = h.Repository.GetPublishedCriteria()
-	} else {
-		criteria, err = h.Repository.GetCriteriaByMinPoints(minPoints)
-	}
+// errorHandler пишет причину в лог сервера и возвращает клиенту код ответа.
+func (h *Handler) errorHandler(ctx *gin.Context, statusCode int, err error) {
 	if err != nil {
 		logrus.Error(err)
 	}
 
-	ctx.HTML(http.StatusOK, "criteria_tiles.html", gin.H{
-		"criteria":       criteria,
-		"minPointsInput": minPointsInput,
-		"activeTab":      "tiles",
-	})
+	ctx.Status(statusCode)
 }
 
-func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
-	var criterion ds.WellsCriterion
-	var err error
+// parseID разбирает ид критерия из пути.
+func parseID(ctx *gin.Context) (int, error) {
+	return strconv.Atoi(ctx.Param("id"))
+}
 
-	idStr := ctx.Param("id")
+// parsePoints разбирает баллы Уэллса.
+func parsePoints(value string) (float64, error) {
+	normalized := strings.ReplaceAll(strings.TrimSpace(value), ",", ".")
 
-	if idStr == "" {
-		criterion, err = h.Repository.GetFirstCriterion()
-	} else {
-		criterionID, convErr := strconv.Atoi(idStr)
-		if convErr != nil {
-			logrus.Error(convErr)
-			ctx.String(http.StatusBadRequest, "Некорректный идентификатор критерия")
-			return
+	return strconv.ParseFloat(normalized, 64)
+}
+
+// imageTypes — типы содержимого, допустимые для изображения критерия.
+var imageTypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/gif":  true,
+	"image/webp": true,
+}
+
+// videoTypes — типы содержимого, допустимые для короткого видео критерия.
+var videoTypes = map[string]bool{
+	"video/mp4":       true,
+	"video/quicktime": true,
+	"video/webm":      true,
+}
+
+// validateUpload проверяет, что загруженный файл нужного вида.
+func validateUpload(header *multipart.FileHeader, allowed map[string]bool) error {
+	contentType, err := repository.DetectContentType(header)
+	if err != nil {
+		return err
+	}
+
+	if !allowed[contentType] {
+		return errUnsupportedFile{contentType: contentType}
+	}
+
+	return nil
+}
+
+type errUnsupportedFile struct {
+	contentType string
+}
+
+func (e errUnsupportedFile) Error() string {
+	return "недопустимый тип файла: " + e.contentType
+}
+
+// formFile достаёт файл из формы.
+func formFile(ctx *gin.Context, field string) (*multipart.FileHeader, bool, error) {
+	header, err := ctx.FormFile(field)
+	if err != nil {
+		if err == http.ErrMissingFile {
+			return nil, false, nil
 		}
 
-		if ctx.Query("next") == "true" {
-			criterion, err = h.Repository.GetNextCriterion(criterionID)
-		} else {
-			criterion, err = h.Repository.GetCriterion(criterionID)
-		}
+		return nil, false, err
 	}
 
-	if err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusNotFound, "Критерий не найден или удалён из справочника")
-		return
-	}
-
-	ctx.HTML(http.StatusOK, "criteria_feed.html", gin.H{
-		"criterion": criterion,
-		"activeTab": "feed",
-	})
-}
-
-func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
-	criterion, err := h.Repository.GetDraftCriterion()
-	hasDraft := err == nil
-
-	ctx.HTML(http.StatusOK, "criteria_draft.html", gin.H{
-		"criterion": criterion,
-		"hasDraft":  hasDraft,
-		"activeTab": "draft",
-	})
-}
-
-// CreateCriterionDraft — создание карточки критерия в статусе черновик
-func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
-	creatorID := currentPhysicianID
-
-	criterion := ds.WellsCriterion{
-		CriterionName:   "Без названия",
-		CriterionStatus: ds.StatusDraft,
-		CreatedAt:       time.Now(),
-		CreatorID:       &creatorID,
-	}
-
-	if err := h.Repository.CreateCriterion(&criterion); err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusInternalServerError, "Не удалось сохранить черновик критерия")
-		return
-	}
-
-	ctx.Redirect(http.StatusFound, "/criteria/draft")
-}
-
-// PublishCriterion — публикация черновика.
-func (h *Handler) PublishCriterion(ctx *gin.Context) {
-	criterionID, err := strconv.Atoi(ctx.PostForm("criterionID"))
-	if err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusBadRequest, "Некорректный идентификатор критерия")
-		return
-	}
-
-	name := strings.TrimSpace(ctx.PostForm("criterionName"))
-	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
-	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
-
-	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
-	points, parseErr := strconv.ParseFloat(pointsInput, 64)
-
-	if name == "" || description == "" || group == "" || parseErr != nil {
-		ctx.String(http.StatusBadRequest, "Заполните все поля критерия перед публикацией")
-		return
-	}
-
-	draft := ds.WellsCriterion{
-		CriterionName:    name,
-		ShortDescription: description,
-		CriterionGroup:   group,
-		WellsPoints:      points,
-	}
-
-	if err := h.Repository.PublishCriterion(criterionID, draft); err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusNotFound, "Черновик критерия не найден")
-		return
-	}
-
-	ctx.Redirect(http.StatusFound, "/criteria")
-}
-
-// DeleteCriterion — логическое удаление критерия из справочника
-func (h *Handler) DeleteCriterion(ctx *gin.Context) {
-	criterionID, err := strconv.Atoi(ctx.PostForm("criterionID"))
-	if err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusBadRequest, "Некорректный идентификатор критерия")
-		return
-	}
-
-	if err := h.Repository.DeleteCriterion(criterionID); err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusInternalServerError, "Не удалось удалить критерий")
-		return
-	}
-
-	ctx.Redirect(http.StatusFound, "/criteria")
-}
-
-// CancelDraft — возврат к первому шагу: черновик отменяется.
-func (h *Handler) CancelDraft(ctx *gin.Context) {
-	criterionID, err := strconv.Atoi(ctx.PostForm("criterionID"))
-	if err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusBadRequest, "Некорректный идентификатор критерия")
-		return
-	}
-
-	if err := h.Repository.CancelDraft(criterionID); err != nil {
-		logrus.Error(err)
-		ctx.String(http.StatusInternalServerError, "Не удалось отменить черновик")
-		return
-	}
-
-	ctx.Redirect(http.StatusFound, "/criteria/draft")
+	return header, true, nil
 }

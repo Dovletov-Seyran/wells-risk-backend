@@ -1,10 +1,6 @@
 package ds
 
-import (
-	"fmt"
-	"strconv"
-	"time"
-)
+import "time"
 
 type CriterionStatus string
 
@@ -15,53 +11,24 @@ const (
 )
 
 type WellsCriterion struct {
-	CriterionID      int             `gorm:"primaryKey;size:32;column:criterion_id"`
-	CriterionName    string          `gorm:"type:varchar(150);not null;column:criterion_name"`
-	ShortDescription string          `gorm:"type:varchar(500);column:short_description"`
-	CriterionStatus  CriterionStatus `gorm:"type:varchar(20);not null;column:criterion_status"`
-	ImageKey         string          `gorm:"type:varchar(255);column:image_key"`
-	VideoKey         string          `gorm:"type:varchar(255);column:video_key"`
-	WellsPoints      float64         `gorm:"type:numeric(3,1);column:wells_points"`
-	CriterionGroup   string          `gorm:"type:varchar(50);column:criterion_group"`
-	CreatedAt        time.Time       `gorm:"type:timestamp;not null;column:created_at"`
-	FormedAt         *time.Time      `gorm:"type:timestamp;column:formed_at"`
+	CriterionID      int             `gorm:"primaryKey;size:32;column:criterion_id" json:"criterion_id"`
+	CriterionName    string          `gorm:"type:varchar(150);not null;column:criterion_name" json:"criterion_name"`
+	ShortDescription string          `gorm:"type:varchar(500);column:short_description" json:"short_description"`
+	CriterionStatus  CriterionStatus `gorm:"type:varchar(20);not null;column:criterion_status" json:"-"`
+	ImageKey         string          `gorm:"type:varchar(255);column:image_key" json:"-"`
+	VideoKey         string          `gorm:"type:varchar(255);column:video_key" json:"-"`
+	WellsPoints      float64         `gorm:"type:numeric(3,1);column:wells_points" json:"wells_points"`
+	CriterionGroup   string          `gorm:"type:varchar(50);column:criterion_group" json:"criterion_group"`
+	CreatedAt        time.Time       `gorm:"type:timestamp;not null;column:created_at" json:"created_at"`
+	FormedAt         *time.Time      `gorm:"type:timestamp;column:formed_at" json:"formed_at"`
 
-	CreatorID *int       `gorm:"size:32;column:creator_id"`
-	Creator   *Physician `gorm:"foreignKey:CreatorID;references:PhysicianID;constraint:OnDelete:NO ACTION"`
+	CreatorID *int       `gorm:"size:32;column:creator_id" json:"-"`
+	Creator   *Physician `gorm:"foreignKey:CreatorID;references:PhysicianID;constraint:OnDelete:NO ACTION" json:"-"`
 
-	LikeCount int `gorm:"-"`
+	LikeCount int  `gorm:"-" json:"-"`
+	LikedByMe bool `gorm:"-" json:"-"`
 }
 
 func (WellsCriterion) TableName() string {
 	return "wells_criteria"
-}
-
-func (c WellsCriterion) PointsLabel() string {
-	text := strconv.FormatFloat(c.WellsPoints, 'g', -1, 64)
-	if c.WellsPoints > 0 {
-		return "+" + text
-	}
-	return text
-}
-
-const (
-	minioPublicURL = "http://localhost:9000"
-	minioBucket    = "wells-criteria"
-)
-
-// ImageURL собирает адрес изображения в MinIO по ключу.
-func (c WellsCriterion) ImageURL() string {
-	key := c.ImageKey
-	if key == "" {
-		key = "no_image"
-	}
-	return fmt.Sprintf("%s/%s/%s.jpg", minioPublicURL, minioBucket, key)
-}
-
-// VideoURL собирает адрес видео в MinIO по ключу.
-func (c WellsCriterion) VideoURL() string {
-	if c.VideoKey == "" {
-		return ""
-	}
-	return fmt.Sprintf("%s/%s/%s.mp4", minioPublicURL, minioBucket, c.VideoKey)
 }

@@ -2,45 +2,64 @@ package api
 
 import (
 	"log"
-	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
+	"wells-risk-backend/internal/app/ds"
+	"wells-risk-backend/internal/app/dsn"
 	"wells-risk-backend/internal/app/handler"
 	"wells-risk-backend/internal/app/repository"
-
-	"wells-risk-backend/internal/app/dsn"
 )
 
 func StartServer() {
 	log.Println("Server start up")
 
-	repo, err := repository.New(dsn.FromEnv())
+	repo, err := repository.New(&repository.RepositorySettings{
+		PostgresDSN:     dsn.FromEnv(),
+		MinioEndpoint:   os.Getenv("MINIO_ENDPOINT"),
+		MinioAccessKey:  os.Getenv("MINIO_ACCESS_KEY"),
+		MinioSecretKey:  os.Getenv("MINIO_SECRET_KEY"),
+		MinioBucketName: os.Getenv("MINIO_BUCKET_NAME"),
+		MinioUseSSL:     false,
+	})
 	if err != nil {
-		logrus.Fatalf("ошибка подключения к базе: %v", err)
+		logrus.Fatalf("ошибка подключения к хранилищам: %v", err)
 	}
 
-	criterioHandler := handler.NewHandler(repo)
+	// Публичный адрес файлов критериев для ответов веб-сервиса.
+	ds.SetFilesBaseURL(os.Getenv("MINIO_PUBLIC_URL") + "/" + os.Getenv("MINIO_BUCKET_NAME"))
+
+	criterionHandler := handler.NewHandler(repo)
 
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
-	r.Static("/static", "./resources")
 
-	r.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(http.StatusFound, "/criteria")
-	})
+	api := r.Group("/api")
+	{
+		criteria := api.Group("/criteria")
+		{
+			criteria.GET("", criterionHandler.GetCriteria)
+			criteria.GET("/feed", criterionHandler.GetCriterionFeed)
+			criteria.GET("/feed/:id", criterionHandler.GetCriterionFeedByID)
+			criteria.GET("/draft", criterionHandler.GetCriterionDraft)
+			criteria.POST("", criterionHandler.CreateCriterion)
+			criteria.PUT("/:id/publish", criterionHandler.PublishCriterion)
+			criteria.DELETE("/:id", criterionHandler.DeleteCriterion)
+			criteria.POST("/:id/like", criterionHandler.LikeCriterion)
+		}
 
-	r.GET("/criteria", criterioHandler.GetCriterionTiles)
-	r.GET("/criteria/feed", criterioHandler.GetCriterionFeed)
-	r.GET("/criteria/feed/:id", criterioHandler.GetCriterionFeed)
-	r.GET("/criteria/draft", criterioHandler.GetCriterionDraft)
-	r.POST("/criteria/draft", criterioHandler.CreateCriterionDraft)
-	r.POST("/criteria/publish", criterioHandler.PublishCriterion)
-	r.POST("/criteria/delete", criterioHandler.DeleteCriterion)
-	r.POST("/criteria/draft/cancel", criterioHandler.CancelDraft)
+		physicians := api.Group("/physicians")
+		{
+			physicians.POST("/register", criterionHandler.RegisterPhysician)
+			physicians.POST("/login", criterionHandler.LoginPhysician)
+			physicians.POST("/logout", criterionHandler.LogoutPhysician)
+		}
+	}
 
-	r.Run()
+	if err := r.Run(); err != nil {
+		logrus.Fatalf("ошибка запуска сервера: %v", err)
+	}
 
 	log.Println("Server down")
 }
