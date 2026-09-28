@@ -128,8 +128,6 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	name := strings.TrimSpace(ctx.PostForm("criterionName"))
 	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
 	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
-	imageKey := strings.TrimSpace(ctx.PostForm("imageKey"))
-	videoKey := strings.TrimSpace(ctx.PostForm("videoKey"))
 
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
 	points, parseErr := strconv.ParseFloat(pointsInput, 64)
@@ -144,8 +142,6 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 		ShortDescription: description,
 		CriterionGroup:   group,
 		WellsPoints:      points,
-		ImageKey:         imageKey,
-		VideoKey:         videoKey,
 	}
 
 	if err := h.Repository.PublishCriterion(criterionID, draft); err != nil {

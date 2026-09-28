@@ -156,8 +156,6 @@ func (r *Repository) PublishCriterion(criterionID int, draft ds.WellsCriterion) 
 			"short_description": draft.ShortDescription,
 			"wells_points":      draft.WellsPoints,
 			"criterion_group":   draft.CriterionGroup,
-			"image_key":         draft.ImageKey,
-			"video_key":         draft.VideoKey,
 			"criterion_status":  ds.StatusPublished,
 			"formed_at":         now,
 		})

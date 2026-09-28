@@ -36,7 +36,7 @@
             <button class="filter__button" type="submit">Найти</button>
         </form>
 
-        {{ if .minPointsInput }}
+        {{ if and .minPointsInput (ne .minPointsInput "-2") }}
         <a class="filter__reset" href="/criteria">Сбросить фильтр</a>
         {{ end }}
 
