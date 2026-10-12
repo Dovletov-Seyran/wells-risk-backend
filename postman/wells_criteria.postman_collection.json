@@ -1,20 +1,31 @@
 {
   "info": {
     "_postman_id": "51c5a33c-44f0-48f9-b6c8-81f8b9f0ee34",
-    "name": "Критерии Уэллса — веб-сервис (ЛР3)",
-    "description": "Коллекция из 10 запросов к веб-сервису справочника критериев шкалы Уэллса: по одному запросу на каждый метод.",
+    "name": "Критерии Уэллса — веб-сервис (ЛР4)",
+    "description": "Коллекция из 10 запросов к веб-сервису справочника критериев шкалы Уэллса: по одному запросу на каждый метод. Токен из ответа аутентификации (Swagger или запрос 09) вставляется в переменную token, заголовок Authorization: Bearer {{token}} включается галочкой во вкладке Headers.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "01 GET Список критериев с фильтром",
+      "name": "01 Список критериев с фильтром",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text",
+            "disabled": true
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/criteria?min_points=1.5",
-          "host": ["{{base_url}}"],
-          "path": ["criteria"],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "criteria"
+          ],
           "query": [
             {
               "key": "min_points",
@@ -23,17 +34,23 @@
             }
           ]
         },
-        "description": "Опубликованные критерии Уэллса с весом не ниже заданного. Поле is_mine = 1, если критерий создан текущим врачом."
+        "description": "Опубликованные критерии с весом не ниже заданного. Работает без токена; с включённым заголовком Authorization поле is_mine = 1 у критериев текущего врача."
       },
       "response": []
     },
     {
-      "name": "02 POST Добавление критерия с изображением и видео",
+      "name": "02 Добавление критерия с изображением и видео",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": "{{base_url}}/criteria",
-        "description": "Новый критерий в статусе черновик. Файлы уходят в MinIO, в БД сохраняются их ключи. Перед отправкой выбери файлы в полях image и video.",
+        "description": "Только с токеном. Новый критерий в статусе черновик, создатель берётся из JWT. Перед отправкой выбери файлы в полях image и video.",
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -73,34 +90,58 @@
       "response": []
     },
     {
-      "name": "03 GET Черновик критерия",
+      "name": "03 Черновик критерия",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": "{{base_url}}/criteria/draft",
-        "description": "Поля черновика текущего врача, ид не указывается. Черновик не может быть больше одного."
+        "description": "Только с токеном. Черновик текущего врача, ид не указывается."
       },
       "response": []
     },
     {
-      "name": "04 PUT Публикация критерия",
+      "name": "04 Публикация критерия",
       "request": {
         "method": "PUT",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": "{{base_url}}/criteria/{{criterion_id}}/publish",
-        "description": "Смена статуса черновик -> опубликован, заполняется formed_at. Обратный переход не предусмотрен."
+        "description": "Только с токеном: без заголовка Authorization ответ 403. Смена статуса черновик -> опубликован, заполняется formed_at."
       },
       "response": []
     },
     {
-      "name": "05 GET Лента критериев",
+      "name": "05 Лента критериев",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text",
+            "disabled": true
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/criteria/feed",
-          "host": ["{{base_url}}"],
-          "path": ["criteria", "feed"],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "criteria",
+            "feed"
+          ],
           "query": [
             {
               "key": "criterion_id",
@@ -116,15 +157,20 @@
             }
           ]
         },
-        "description": "Без параметров — первый критерий ленты (ид не указывается). С включёнными criterion_id и next=true — следующий критерий после указанного. Поле is_liked = 1, если текущий врач отметил критерий."
+        "description": "Без параметров — первый критерий ленты (ид не указывается). С включёнными criterion_id и next=true — следующий после указанного. Работает без токена; с заголовком Authorization поле is_liked = 1, если текущий врач поставил лайк."
       },
       "response": []
     },
     {
-      "name": "06 POST Лайк критерия",
+      "name": "06 Лайк критерия",
       "request": {
         "method": "POST",
         "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
           {
             "key": "Content-Type",
             "value": "application/json",
@@ -132,7 +178,7 @@
           }
         ],
         "url": "{{base_url}}/criteria/{{criterion_id}}/like",
-        "description": "value = 1 ставит лайк текущего врача, value = 0 отменяет его.",
+        "description": "Только с токеном. value = 1 ставит лайк текущего врача, value = 0 отменяет его.",
         "body": {
           "mode": "raw",
           "raw": "{\n    \"value\": 1\n}",
@@ -146,17 +192,23 @@
       "response": []
     },
     {
-      "name": "07 DELETE Удаление критерия",
+      "name": "07 Удаление критерия",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": "{{base_url}}/criteria/{{criterion_id}}",
-        "description": "Логическое удаление своего критерия, запись остаётся в БД в статусе удалён."
+        "description": "Только с токеном. Логическое удаление своего критерия, запись остаётся в БД в статусе удалён."
       },
       "response": []
     },
     {
-      "name": "08 POST Регистрация врача",
+      "name": "08 Регистрация врача",
       "request": {
         "method": "POST",
         "header": [
@@ -167,7 +219,7 @@
           }
         ],
         "url": "{{base_url}}/physicians/register",
-        "description": "Регистрация нового врача, пароль хранится в виде sha256-хеша.",
+        "description": "Регистрация нового врача, пароль хранится в виде sha1-хеша. Ответ {\"ok\": true}.",
         "body": {
           "mode": "raw",
           "raw": "{\n    \"login\": \"kuznetsov\",\n    \"password\": \"secret123\",\n    \"full_name\": \"Кузнецов Андрей Николаевич\"\n}",
@@ -181,7 +233,7 @@
       "response": []
     },
     {
-      "name": "09 POST Аутентификация врача (заглушка)",
+      "name": "09 Аутентификация врача",
       "request": {
         "method": "POST",
         "header": [
@@ -192,10 +244,10 @@
           }
         ],
         "url": "{{base_url}}/physicians/login",
-        "description": "Заглушка для лабораторной работы №4, где метод будет выдавать JWT-токен.",
+        "description": "Проверка логина и пароля. access_token из ответа вставь в переменную коллекции token.",
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"login\": \"ivanov\",\n    \"password\": \"ivanov123\"\n}",
+          "raw": "{\n    \"login\": \"kuznetsov\",\n    \"password\": \"secret123\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -206,12 +258,18 @@
       "response": []
     },
     {
-      "name": "10 POST Деавторизация врача (заглушка)",
+      "name": "10 Деавторизация врача",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
         "url": "{{base_url}}/physicians/logout",
-        "description": "Заглушка для лабораторной работы №4, где токен будет попадать в blacklist."
+        "description": "Только с токеном. Токен попадает в blacklist Redis и дальше не принимается (403)."
       },
       "response": []
     }
@@ -225,6 +283,11 @@
     {
       "key": "criterion_id",
       "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
       "type": "string"
     }
   ]
