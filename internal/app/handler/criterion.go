@@ -8,14 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"wells-risk-backend/internal/app/auth"
 	"wells-risk-backend/internal/app/ds"
 	"wells-risk-backend/internal/app/repository"
 )
 
 // GetCriteria — GET /api/criteria
 func (h *Handler) GetCriteria(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	var minPoints *float64
 
@@ -40,7 +39,7 @@ func (h *Handler) GetCriteria(ctx *gin.Context) {
 
 // GetCriterionFeed — GET /api/criteria/feed
 func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	var criterion ds.WellsCriterion
 	var err error
@@ -72,7 +71,7 @@ func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
 
 // GetCriterionDraft — GET /api/criteria/draft
 func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	criterion, err := h.Repository.GetDraftCriterion(physicianID)
 	if err != nil {
@@ -85,7 +84,7 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 
 // CreateCriterion — POST /api/criteria
 func (h *Handler) CreateCriterion(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
@@ -185,7 +184,7 @@ func (h *Handler) CreateCriterion(ctx *gin.Context) {
 
 // PublishCriterion — PUT /api/criteria/:id/publish
 func (h *Handler) PublishCriterion(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	criterionID, err := parseID(ctx)
 	if err != nil {
@@ -209,7 +208,7 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 
 // DeleteCriterion — DELETE /api/criteria/:id
 func (h *Handler) DeleteCriterion(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	criterionID, err := parseID(ctx)
 	if err != nil {
@@ -232,7 +231,7 @@ type likeRequest struct {
 
 // LikeCriterion — POST /api/criteria/:id/like
 func (h *Handler) LikeCriterion(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
+	physicianID := currentPhysicianID(ctx)
 
 	criterionID, err := parseID(ctx)
 	if err != nil {

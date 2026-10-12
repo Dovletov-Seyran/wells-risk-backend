@@ -22,6 +22,14 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
+// PhysicianIDKey — ключ контекста gin, в который middleware кладёт ид врача из JWT.
+const PhysicianIDKey = "physician_id"
+
+// currentPhysicianID возвращает ид врача из JWT, для гостя — 0.
+func currentPhysicianID(ctx *gin.Context) int {
+	return ctx.GetInt(PhysicianIDKey)
+}
+
 // errorHandler пишет причину в лог сервера и возвращает клиенту код ответа.
 func (h *Handler) errorHandler(ctx *gin.Context, statusCode int, err error) {
 	if err != nil {

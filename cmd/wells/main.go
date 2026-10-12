@@ -1,21 +1,24 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
 
-	"github.com/joho/godotenv"
-
-	"wells-risk-backend/internal/api"
+	"wells-risk-backend/internal/pkg/app"
 )
 
 func main() {
-	log.Println("Application start!")
+	ctx := context.Background()
 
-	if err := godotenv.Load(); err != nil {
-		log.Println("файл .env не найден, читаю переменные окружения")
+	log.Println("Initializing server")
+	application, err := app.New(ctx)
+	if err != nil {
+		log.Println("cant create application:", err)
+		os.Exit(2)
 	}
 
-	api.StartServer()
-
-	log.Println("Application terminated")
+	log.Println("Application start!")
+	application.Run()
+	log.Println("Application terminated!")
 }

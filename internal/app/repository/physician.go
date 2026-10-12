@@ -1,22 +1,16 @@
 package repository
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"github.com/google/uuid"
 
 	"wells-risk-backend/internal/app/ds"
 )
 
-// hashPassword — хеш пароля врача.
-func hashPassword(password string) string {
-	sum := sha256.Sum256([]byte(password))
-
-	return hex.EncodeToString(sum[:])
-}
-
-// CreatePhysician регистрирует нового врача.
-func (r *Repository) CreatePhysician(physician *ds.Physician) error {
-	physician.Password = hashPassword(physician.Password)
+// RegisterPhysician регистрирует нового врача.
+func (r *Repository) RegisterPhysician(physician *ds.Physician) error {
+	if physician.PhysicianUUID == uuid.Nil {
+		physician.PhysicianUUID = uuid.New()
+	}
 
 	return r.db.Create(physician).Error
 }
@@ -32,15 +26,25 @@ func (r *Repository) PhysicianExists(login string) (bool, error) {
 	return count > 0, err
 }
 
-// GetPhysician возвращает врача по ид.
-func (r *Repository) GetPhysician(physicianID int) (ds.Physician, error) {
-	var physician ds.Physician
+// GetPhysicianByLogin возвращает врача по логину.
+func (r *Repository) GetPhysicianByLogin(login string) (*ds.Physician, error) {
+	physician := &ds.Physician{}
 
-	err := r.db.
-		Where("physician_id = ?", physicianID).
-		First(&physician).Error
+	err := r.db.Where("login = ?", login).First(physician).Error
 	if err != nil {
-		return ds.Physician{}, err
+		return nil, err
+	}
+
+	return physician, nil
+}
+
+// GetPhysicianByUUID возвращает врача по uuid из JWT.
+func (r *Repository) GetPhysicianByUUID(physicianUUID uuid.UUID) (*ds.Physician, error) {
+	physician := &ds.Physician{}
+
+	err := r.db.Where("physician_uuid = ?", physicianUUID).First(physician).Error
+	if err != nil {
+		return nil, err
 	}
 
 	return physician, nil

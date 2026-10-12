@@ -3,6 +3,10 @@ package ds
 import (
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+
+	"wells-risk-backend/internal/app/role"
 )
 
 var filesBaseURL = "http://localhost:9000/wells-criteria"
@@ -74,18 +78,20 @@ func NewCriterionListResponse(criteria []WellsCriterion, currentPhysicianID int)
 }
 
 type PhysicianResponse struct {
-	PhysicianID int    `json:"physician_id"`
-	Login       string `json:"login"`
-	FullName    string `json:"full_name"`
-	IsModerator bool   `json:"is_moderator"`
+	PhysicianID   int       `json:"physician_id"`
+	PhysicianUUID uuid.UUID `json:"physician_uuid"`
+	Login         string    `json:"login"`
+	FullName      string    `json:"full_name"`
+	Role          role.Role `json:"role"`
 }
 
 // NewPhysicianResponse сериализует врача.
 func NewPhysicianResponse(physician Physician) PhysicianResponse {
 	return PhysicianResponse{
-		PhysicianID: physician.PhysicianID,
-		Login:       physician.Login,
-		FullName:    physician.FullName,
-		IsModerator: physician.IsModerator,
+		PhysicianID:   physician.PhysicianID,
+		PhysicianUUID: physician.PhysicianUUID,
+		Login:         physician.Login,
+		FullName:      physician.FullName,
+		Role:          physician.Role,
 	}
 }
