@@ -69,9 +69,7 @@
                 <h2 class="draft__legend">Описание</h2>
 
                 <label class="draft__label" for="criterionName">Формулировка критерия</label>
-                <input class="draft__input" id="criterionName" type="text" name="criterionName" required
-                    placeholder="Отёк всей нижней конечности"
-                    value="{{ if ne .criterion.CriterionName "Без названия" }}{{ .criterion.CriterionName }}{{ end }}">
+                <input class="draft__input" id="criterionName" type="text" value="{{ .criterion.CriterionName }}" readonly>
 
                 <label class="draft__label" for="shortDescription">Краткое описание</label>
                 <textarea class="draft__input draft__input--area" id="shortDescription" name="shortDescription" required
@@ -126,10 +124,16 @@
                 <label class="draft__label" for="videoFile">Выберите файл видео</label>
                 <input class="draft__file" id="videoFile" type="file" name="videoFile" accept="video/*">
             </section>
+            <section class="draft__section">
+                <h2 class="draft__legend">Описание</h2>
+
+                <label class="draft__label" for="criterionName">Формулировка критерия</label>
+                <input class="draft__input" id="criterionName" type="text" name="criterionName" required
+                    placeholder="Отёк всей нижней конечности">
+            </section>
 
             <button class="draft__submit" type="submit">Далее</button>
-            <p class="draft__hint">Карточка сохранится в статусе «черновик», параметры заполните на следующем шаге</p>
-        </form>
+            <p class="draft__hint">Карточка сохранится в статусе «черновик», описание и параметры заполните на следующем шаге</p>
         {{ end }}
 
         {{ template "tabbar.html" . }}

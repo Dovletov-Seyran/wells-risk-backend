@@ -152,7 +152,6 @@ func (r *Repository) PublishCriterion(criterionID int, draft ds.WellsCriterion) 
 	result := r.db.Model(&ds.WellsCriterion{}).
 		Where("criterion_id = ? AND criterion_status = ?", criterionID, ds.StatusDraft).
 		Updates(map[string]interface{}{
-			"criterion_name":    draft.CriterionName,
 			"short_description": draft.ShortDescription,
 			"wells_points":      draft.WellsPoints,
 			"criterion_group":   draft.CriterionGroup,

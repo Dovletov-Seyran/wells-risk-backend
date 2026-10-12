@@ -45,7 +45,7 @@ func (c WellsCriterion) PointsLabel() string {
 }
 
 const (
-	minioPublicURL = "http://localhost:9000"
+	minioPublicURL = "http://localhost:19000"
 	minioBucket    = "wells-criteria"
 )
 

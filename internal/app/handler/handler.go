@@ -100,8 +100,14 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
 	creatorID := currentPhysicianID
 
+	name := strings.TrimSpace(ctx.PostForm("criterionName"))
+	if name == "" {
+		ctx.String(http.StatusBadRequest, "Укажите название критерия")
+		return
+	}
+
 	criterion := ds.WellsCriterion{
-		CriterionName:   "Без названия",
+		CriterionName:   name,
 		CriterionStatus: ds.StatusDraft,
 		CreatedAt:       time.Now(),
 		CreatorID:       &creatorID,
@@ -125,20 +131,18 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 		return
 	}
 
-	name := strings.TrimSpace(ctx.PostForm("criterionName"))
 	description := strings.TrimSpace(ctx.PostForm("shortDescription"))
 	group := strings.TrimSpace(ctx.PostForm("criterionGroup"))
 
 	pointsInput := strings.ReplaceAll(strings.TrimSpace(ctx.PostForm("wellsPoints")), ",", ".")
 	points, parseErr := strconv.ParseFloat(pointsInput, 64)
 
-	if name == "" || description == "" || group == "" || parseErr != nil {
+	if description == "" || group == "" || parseErr != nil {
 		ctx.String(http.StatusBadRequest, "Заполните все поля критерия перед публикацией")
 		return
 	}
 
 	draft := ds.WellsCriterion{
-		CriterionName:    name,
 		ShortDescription: description,
 		CriterionGroup:   group,
 		WellsPoints:      points,
