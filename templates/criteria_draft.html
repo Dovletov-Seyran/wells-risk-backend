@@ -124,6 +124,7 @@
                 <label class="draft__label" for="videoFile">Выберите файл видео</label>
                 <input class="draft__file" id="videoFile" type="file" name="videoFile" accept="video/*">
             </section>
+
             <section class="draft__section">
                 <h2 class="draft__legend">Описание</h2>
 
@@ -134,6 +135,7 @@
 
             <button class="draft__submit" type="submit">Далее</button>
             <p class="draft__hint">Карточка сохранится в статусе «черновик», описание и параметры заполните на следующем шаге</p>
+        </form>
         {{ end }}
 
         {{ template "tabbar.html" . }}

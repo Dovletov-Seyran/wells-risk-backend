@@ -110,7 +110,7 @@ func (h *Handler) CreateCriterionDraft(ctx *gin.Context) {
 		CriterionName:   name,
 		CriterionStatus: ds.StatusDraft,
 		CreatedAt:       time.Now(),
-		CreatorID:       &creatorID,
+		CreatorID:       creatorID,
 	}
 
 	if err := h.Repository.CreateCriterion(&criterion); err != nil {
