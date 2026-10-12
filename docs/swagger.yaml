@@ -1,0 +1,379 @@
+basePath: /
+definitions:
+  app.loginReq:
+    properties:
+      login:
+        example: kuznetsov
+        type: string
+      password:
+        example: secret123
+        type: string
+    type: object
+  app.loginResp:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        example: 3600000000000
+        type: integer
+      token_type:
+        type: string
+    type: object
+  app.registerReq:
+    properties:
+      full_name:
+        example: Кузнецов Андрей Николаевич
+        type: string
+      login:
+        example: kuznetsov
+        type: string
+      password:
+        example: secret123
+        type: string
+    type: object
+  app.registerResp:
+    properties:
+      ok:
+        type: boolean
+    type: object
+  ds.CriterionResponse:
+    properties:
+      created_at:
+        type: string
+      criterion_group:
+        type: string
+      criterion_id:
+        type: integer
+      criterion_name:
+        type: string
+      formed_at:
+        type: string
+      image_url:
+        type: string
+      is_liked:
+        type: integer
+      is_mine:
+        type: integer
+      like_count:
+        type: integer
+      short_description:
+        type: string
+      video_url:
+        type: string
+      wells_points:
+        type: number
+    type: object
+  handler.likeRequest:
+    properties:
+      value:
+        example: 1
+        type: integer
+    required:
+    - value
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: dovletovsejran7@gmail.com
+    name: Довлетов Сейран
+  description: Веб-сервис справочника критериев шкалы Уэллса для оценки риска тромбоза
+    глубоких вен и ТЭЛА
+  license:
+    name: AS IS (NO WARRANTY)
+  title: Критерии шкалы Уэллса
+  version: "1.0"
+paths:
+  /api/criteria:
+    get:
+      description: Опубликованные критерии шкалы Уэллса с фильтром по минимальному
+        весу. Доступно гостю; с токеном is_mine = 1 у критериев текущего врача
+      parameters:
+      - description: минимальный вес критерия в баллах Уэллса
+        in: query
+        name: min_points
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ds.CriterionResponse'
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Список критериев
+      tags:
+      - Критерии
+    post:
+      consumes:
+      - multipart/form-data
+      description: Новый критерий в статусе черновик, создатель берётся из JWT. Изображение
+        и видео загружаются в MinIO, в БД сохраняются ключи файлов
+      parameters:
+      - description: название критерия
+        in: formData
+        name: criterion_name
+        required: true
+        type: string
+      - description: краткое описание
+        in: formData
+        name: short_description
+        type: string
+      - description: группа критерия
+        in: formData
+        name: criterion_group
+        type: string
+      - description: вес критерия в баллах Уэллса
+        in: formData
+        name: wells_points
+        type: number
+      - description: изображение критерия
+        in: formData
+        name: image
+        type: file
+      - description: короткое видео критерия
+        in: formData
+        name: video
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.CriterionResponse'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      summary: Добавление критерия
+      tags:
+      - Критерии
+  /api/criteria/{id}:
+    delete:
+      description: 'Логическое удаление: статус меняется на удалён. Только свои критерии'
+      parameters:
+      - description: ид критерия
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление критерия
+      tags:
+      - Критерии
+  /api/criteria/{id}/like:
+    post:
+      consumes:
+      - application/json
+      description: 'Лайк текущего врача: value = 1 ставит лайк, value = 0 отменяет'
+      parameters:
+      - description: ид критерия
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: значение лайка
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.likeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.CriterionResponse'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Лайк критерия
+      tags:
+      - Критерии
+  /api/criteria/{id}/publish:
+    put:
+      description: Смена статуса черновик → опубликован, заполняется дата формирования.
+        Только свой черновик
+      parameters:
+      - description: ид критерия
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.CriterionResponse'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Публикация критерия
+      tags:
+      - Критерии
+  /api/criteria/draft:
+    get:
+      description: Черновик текущего врача, ид не указывается. У врача не более одного
+        черновика
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.CriterionResponse'
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      security:
+      - ApiKeyAuth: []
+      summary: Черновик критерия
+      tags:
+      - Критерии
+  /api/criteria/feed:
+    get:
+      description: Без параметров — первый критерий ленты, с criterion_id — этот критерий,
+        с next=true — следующий после него. Доступно гостю; с токеном is_liked = 1,
+        если текущий врач поставил лайк
+      parameters:
+      - description: ид критерия ленты
+        in: query
+        name: criterion_id
+        type: integer
+      - description: следующий критерий после указанного
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.CriterionResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Лента критериев
+      tags:
+      - Критерии
+  /api/physicians/login:
+    post:
+      consumes:
+      - application/json
+      description: 'Проверка логина и пароля, в ответе JWT для заголовка Authorization:
+        Bearer <access_token>'
+      parameters:
+      - description: логин и пароль
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/app.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.loginResp'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Аутентификация врача
+      tags:
+      - Врачи
+  /api/physicians/logout:
+    post:
+      description: Токен из заголовка Authorization попадает в blacklist Redis до
+        истечения срока действия
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - ApiKeyAuth: []
+      summary: Деавторизация врача
+      tags:
+      - Врачи
+  /api/physicians/register:
+    post:
+      consumes:
+      - application/json
+      description: Новый врач с ролью создателя, пароль хранится в виде sha1-хеша
+      parameters:
+      - description: данные врача
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/app.registerReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app.registerResp'
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      summary: Регистрация врача
+      tags:
+      - Врачи
+schemes:
+- http
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'Токен из ответа аутентификации в виде: Bearer <access_token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

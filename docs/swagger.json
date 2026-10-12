@@ -1,0 +1,572 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Веб-сервис справочника критериев шкалы Уэллса для оценки риска тромбоза глубоких вен и ТЭЛА",
+        "title": "Критерии шкалы Уэллса",
+        "contact": {
+            "name": "Довлетов Сейран",
+            "email": "dovletovsejran7@gmail.com"
+        },
+        "license": {
+            "name": "AS IS (NO WARRANTY)"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/criteria": {
+            "get": {
+                "description": "Опубликованные критерии шкалы Уэллса с фильтром по минимальному весу. Доступно гостю; с токеном is_mine = 1 у критериев текущего врача",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Список критериев",
+                "parameters": [
+                    {
+                        "type": "number",
+                        "description": "минимальный вес критерия в баллах Уэллса",
+                        "name": "min_points",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ds.CriterionResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Новый критерий в статусе черновик, создатель берётся из JWT. Изображение и видео загружаются в MinIO, в БД сохраняются ключи файлов",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Добавление критерия",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "название критерия",
+                        "name": "criterion_name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "краткое описание",
+                        "name": "short_description",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "группа критерия",
+                        "name": "criterion_group",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "number",
+                        "description": "вес критерия в баллах Уэллса",
+                        "name": "wells_points",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "изображение критерия",
+                        "name": "image",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "короткое видео критерия",
+                        "name": "video",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/ds.CriterionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/criteria/draft": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Черновик текущего врача, ид не указывается. У врача не более одного черновика",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Черновик критерия",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ds.CriterionResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/criteria/feed": {
+            "get": {
+                "description": "Без параметров — первый критерий ленты, с criterion_id — этот критерий, с next=true — следующий после него. Доступно гостю; с токеном is_liked = 1, если текущий врач поставил лайк",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Лента критериев",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ид критерия ленты",
+                        "name": "criterion_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "следующий критерий после указанного",
+                        "name": "next",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ds.CriterionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/criteria/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Логическое удаление: статус меняется на удалён. Только свои критерии",
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Удаление критерия",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ид критерия",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/criteria/{id}/like": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Лайк текущего врача: value = 1 ставит лайк, value = 0 отменяет",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Лайк критерия",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ид критерия",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "значение лайка",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.likeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ds.CriterionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/criteria/{id}/publish": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Смена статуса черновик → опубликован, заполняется дата формирования. Только свой черновик",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Критерии"
+                ],
+                "summary": "Публикация критерия",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ид критерия",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ds.CriterionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/physicians/login": {
+            "post": {
+                "description": "Проверка логина и пароля, в ответе JWT для заголовка Authorization: Bearer \u003caccess_token\u003e",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Врачи"
+                ],
+                "summary": "Аутентификация врача",
+                "parameters": [
+                    {
+                        "description": "логин и пароль",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.loginReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.loginResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/physicians/logout": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Токен из заголовка Authorization попадает в blacklist Redis до истечения срока действия",
+                "tags": [
+                    "Врачи"
+                ],
+                "summary": "Деавторизация врача",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/physicians/register": {
+            "post": {
+                "description": "Новый врач с ролью создателя, пароль хранится в виде sha1-хеша",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Врачи"
+                ],
+                "summary": "Регистрация врача",
+                "parameters": [
+                    {
+                        "description": "данные врача",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.registerReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/app.registerResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "app.loginReq": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "kuznetsov"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                }
+            }
+        },
+        "app.loginResp": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 3600000000000
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "app.registerReq": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "example": "Кузнецов Андрей Николаевич"
+                },
+                "login": {
+                    "type": "string",
+                    "example": "kuznetsov"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                }
+            }
+        },
+        "app.registerResp": {
+            "type": "object",
+            "properties": {
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ds.CriterionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "criterion_group": {
+                    "type": "string"
+                },
+                "criterion_id": {
+                    "type": "integer"
+                },
+                "criterion_name": {
+                    "type": "string"
+                },
+                "formed_at": {
+                    "type": "string"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "is_liked": {
+                    "type": "integer"
+                },
+                "is_mine": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "short_description": {
+                    "type": "string"
+                },
+                "video_url": {
+                    "type": "string"
+                },
+                "wells_points": {
+                    "type": "number"
+                }
+            }
+        },
+        "handler.likeRequest": {
+            "type": "object",
+            "required": [
+                "value"
+            ],
+            "properties": {
+                "value": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "Токен из ответа аутентификации в виде: Bearer \u003caccess_token\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

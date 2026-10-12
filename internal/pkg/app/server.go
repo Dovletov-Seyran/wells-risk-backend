@@ -7,13 +7,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"wells-risk-backend/docs"
 	"wells-risk-backend/internal/app/ds"
 	"wells-risk-backend/internal/app/role"
 )
@@ -22,6 +26,13 @@ func (a *Application) StartServer() {
 	log.Println("Server start up")
 
 	r := gin.Default()
+
+	// Swagger отправляет запросы на тот порт, на котором запущен сервис.
+	if port := os.Getenv("PORT"); port != "" {
+		docs.SwaggerInfo.Host = "localhost:" + port
+	}
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	h := a.handler
 
@@ -55,17 +66,28 @@ func (a *Application) StartServer() {
 }
 
 type loginReq struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Login    string `json:"login" example:"kuznetsov"`
+	Password string `json:"password" example:"secret123"`
 }
 
 type loginResp struct {
-	ExpiresIn   time.Duration `json:"expires_in"`
+	ExpiresIn   time.Duration `json:"expires_in" swaggertype:"integer" example:"3600000000000"`
 	AccessToken string        `json:"access_token"`
 	TokenType   string        `json:"token_type"`
 }
 
-// Login — POST /api/physicians/login
+// Login godoc
+// @Summary      Аутентификация врача
+// @Description  Проверка логина и пароля, в ответе JWT для заголовка Authorization: Bearer <access_token>
+// @Tags         Врачи
+// @Accept       json
+// @Produce      json
+// @Param        body  body      loginReq  true  "логин и пароль"
+// @Success      200   {object}  loginResp
+// @Failure      400
+// @Failure      403
+// @Failure      500
+// @Router       /api/physicians/login [post]
 func (a *Application) Login(gCtx *gin.Context) {
 	cfg := a.config
 	req := &loginReq{}
@@ -118,16 +140,27 @@ func (a *Application) Login(gCtx *gin.Context) {
 }
 
 type registerReq struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	FullName string `json:"full_name"`
+	Login    string `json:"login" example:"kuznetsov"`
+	Password string `json:"password" example:"secret123"`
+	FullName string `json:"full_name" example:"Кузнецов Андрей Николаевич"`
 }
 
 type registerResp struct {
 	Ok bool `json:"ok"`
 }
 
-// Register — POST /api/physicians/register
+// Register godoc
+// @Summary      Регистрация врача
+// @Description  Новый врач с ролью создателя, пароль хранится в виде sha1-хеша
+// @Tags         Врачи
+// @Accept       json
+// @Produce      json
+// @Param        body  body      registerReq  true  "данные врача"
+// @Success      200   {object}  registerResp
+// @Failure      400
+// @Failure      409
+// @Failure      500
+// @Router       /api/physicians/register [post]
 func (a *Application) Register(gCtx *gin.Context) {
 	req := &registerReq{}
 
@@ -182,7 +215,16 @@ func generateHashString(s string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Logout — POST /api/physicians/logout
+// Logout godoc
+// @Summary      Деавторизация врача
+// @Description  Токен из заголовка Authorization попадает в blacklist Redis до истечения срока действия
+// @Tags         Врачи
+// @Security     ApiKeyAuth
+// @Success      200
+// @Failure      400
+// @Failure      403
+// @Failure      500
+// @Router       /api/physicians/logout [post]
 func (a *Application) Logout(gCtx *gin.Context) {
 	// получаем заголовок
 	jwtStr := gCtx.GetHeader("Authorization")

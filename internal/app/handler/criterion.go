@@ -12,7 +12,16 @@ import (
 	"wells-risk-backend/internal/app/repository"
 )
 
-// GetCriteria — GET /api/criteria
+// GetCriteria godoc
+// @Summary      Список критериев
+// @Description  Опубликованные критерии шкалы Уэллса с фильтром по минимальному весу. Доступно гостю; с токеном is_mine = 1 у критериев текущего врача
+// @Tags         Критерии
+// @Produce      json
+// @Param        min_points  query     number  false  "минимальный вес критерия в баллах Уэллса"
+// @Success      200         {array}   ds.CriterionResponse
+// @Failure      400
+// @Failure      500
+// @Router       /api/criteria [get]
 func (h *Handler) GetCriteria(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -37,7 +46,17 @@ func (h *Handler) GetCriteria(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ds.NewCriterionListResponse(criteria, physicianID))
 }
 
-// GetCriterionFeed — GET /api/criteria/feed
+// GetCriterionFeed godoc
+// @Summary      Лента критериев
+// @Description  Без параметров — первый критерий ленты, с criterion_id — этот критерий, с next=true — следующий после него. Доступно гостю; с токеном is_liked = 1, если текущий врач поставил лайк
+// @Tags         Критерии
+// @Produce      json
+// @Param        criterion_id  query     int     false  "ид критерия ленты"
+// @Param        next          query     bool    false  "следующий критерий после указанного"
+// @Success      200           {object}  ds.CriterionResponse
+// @Failure      400
+// @Failure      404
+// @Router       /api/criteria/feed [get]
 func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -69,7 +88,16 @@ func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ds.NewCriterionResponse(criterion, physicianID))
 }
 
-// GetCriterionDraft — GET /api/criteria/draft
+// GetCriterionDraft godoc
+// @Summary      Черновик критерия
+// @Description  Черновик текущего врача, ид не указывается. У врача не более одного черновика
+// @Tags         Критерии
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  ds.CriterionResponse
+// @Failure      403
+// @Failure      404
+// @Router       /api/criteria/draft [get]
 func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -82,7 +110,25 @@ func (h *Handler) GetCriterionDraft(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ds.NewCriterionResponse(criterion, physicianID))
 }
 
-// CreateCriterion — POST /api/criteria
+// CreateCriterion godoc
+// @Summary      Добавление критерия
+// @Description  Новый критерий в статусе черновик, создатель берётся из JWT. Изображение и видео загружаются в MinIO, в БД сохраняются ключи файлов
+// @Tags         Критерии
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        criterion_name     formData  string  true   "название критерия"
+// @Param        short_description  formData  string  false  "краткое описание"
+// @Param        criterion_group    formData  string  false  "группа критерия"
+// @Param        wells_points       formData  number  false  "вес критерия в баллах Уэллса"
+// @Param        image              formData  file    false  "изображение критерия"
+// @Param        video              formData  file    false  "короткое видео критерия"
+// @Success      201                {object}  ds.CriterionResponse
+// @Failure      400
+// @Failure      403
+// @Failure      409
+// @Failure      500
+// @Router       /api/criteria [post]
 func (h *Handler) CreateCriterion(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -182,7 +228,18 @@ func (h *Handler) CreateCriterion(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, ds.NewCriterionResponse(created, physicianID))
 }
 
-// PublishCriterion — PUT /api/criteria/:id/publish
+// PublishCriterion godoc
+// @Summary      Публикация критерия
+// @Description  Смена статуса черновик → опубликован, заполняется дата формирования. Только свой черновик
+// @Tags         Критерии
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id   path      int  true  "ид критерия"
+// @Success      200  {object}  ds.CriterionResponse
+// @Failure      400
+// @Failure      403
+// @Failure      404
+// @Router       /api/criteria/{id}/publish [put]
 func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -206,7 +263,17 @@ func (h *Handler) PublishCriterion(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ds.NewCriterionResponse(criterion, physicianID))
 }
 
-// DeleteCriterion — DELETE /api/criteria/:id
+// DeleteCriterion godoc
+// @Summary      Удаление критерия
+// @Description  Логическое удаление: статус меняется на удалён. Только свои критерии
+// @Tags         Критерии
+// @Security     ApiKeyAuth
+// @Param        id   path  int  true  "ид критерия"
+// @Success      204
+// @Failure      400
+// @Failure      403
+// @Failure      404
+// @Router       /api/criteria/{id} [delete]
 func (h *Handler) DeleteCriterion(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
@@ -226,10 +293,23 @@ func (h *Handler) DeleteCriterion(ctx *gin.Context) {
 
 // likeRequest — тело запроса отметки
 type likeRequest struct {
-	Value *int `json:"value" binding:"required"`
+	Value *int `json:"value" binding:"required" example:"1"`
 }
 
-// LikeCriterion — POST /api/criteria/:id/like
+// LikeCriterion godoc
+// @Summary      Лайк критерия
+// @Description  Лайк текущего врача: value = 1 ставит лайк, value = 0 отменяет
+// @Tags         Критерии
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id    path      int          true  "ид критерия"
+// @Param        body  body      likeRequest  true  "значение лайка"
+// @Success      200   {object}  ds.CriterionResponse
+// @Failure      400
+// @Failure      403
+// @Failure      404
+// @Router       /api/criteria/{id}/like [post]
 func (h *Handler) LikeCriterion(ctx *gin.Context) {
 	physicianID := currentPhysicianID(ctx)
 
