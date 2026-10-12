@@ -31,6 +31,13 @@ func main() {
 		log.Fatalf("ошибка миграции: %v", err)
 	}
 
+	// AutoMigrate не добавляет NOT NULL к уже созданным столбцам, поэтому меняем их явно.
+	for _, field := range []string{"ImageKey", "VideoKey", "CreatorID"} {
+		if err := db.Migrator().AlterColumn(&ds.WellsCriterion{}, field); err != nil {
+			log.Fatalf("ошибка изменения столбца %s: %v", field, err)
+		}
+	}
+
 	var count int64
 
 	if err := db.Model(&ds.Physician{}).Where("physician_id = ?", 1).Count(&count).Error; err != nil {

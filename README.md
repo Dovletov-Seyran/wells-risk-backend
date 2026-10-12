@@ -26,8 +26,7 @@ go run ./cmd/wells            # веб-сервис на http://localhost:8080
 | Метод | URL | Параметры | Ответ | Коды |
 |---|---|---|---|---|
 | GET | `/api/criteria` | `min_points` — минимальный вес критерия в баллах | массив опубликованных критериев, поле `is_mine` = 1 если критерий создан текущим врачом | 200, 400, 500 |
-| GET | `/api/criteria/feed` | — | первый критерий ленты, ид не указывается | 200, 404 |
-| GET | `/api/criteria/feed/:id` | `next=true` — следующий критерий ленты | критерий ленты | 200, 400, 404 |
+| GET | `/api/criteria/feed` | `criterion_id` — ид критерия, `next=true` — следующий после него; без параметров — первый критерий ленты | критерий ленты, `is_liked` = 1 если текущий врач отметил критерий | 200, 400, 404 |
 | GET | `/api/criteria/draft` | — | черновик текущего врача, ид не указывается | 200, 404 |
 | POST | `/api/criteria` | форма: `criterion_name`, `short_description`, `criterion_group`, `wells_points`, файлы `image`, `video` | созданный критерий в статусе черновик | 201, 400, 409, 500 |
 | PUT | `/api/criteria/:id/publish` | — | опубликованный критерий | 200, 400, 404 |
@@ -62,13 +61,13 @@ go run ./cmd/wells            # веб-сервис на http://localhost:8080
 | `criterion_name` | varchar(150), not null | название критерия |
 | `short_description` | varchar(500) | клиническое описание критерия |
 | `criterion_status` | varchar(20), not null | статус: черновик, опубликован, удалён |
-| `image_key` | varchar(255) | ключ изображения в MinIO |
-| `video_key` | varchar(255) | ключ короткого видео в MinIO |
+| `image_key` | varchar(255), not null | ключ изображения в MinIO |
+| `video_key` | varchar(255), not null | ключ короткого видео в MinIO |
 | `wells_points` | numeric(3,1) | вес критерия в баллах Уэллса |
 | `criterion_group` | varchar(50) | группа критерия |
 | `created_at` | timestamp, not null | дата создания черновика |
 | `formed_at` | timestamp | дата публикации |
-| `creator_id` | integer, FK → `physicians` | врач-создатель критерия |
+| `creator_id` | integer, not null, FK → `physicians` | врач-создатель критерия |
 
 ### `physicians` — врачи
 

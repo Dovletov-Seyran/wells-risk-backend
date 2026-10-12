@@ -38,7 +38,7 @@ type CriterionResponse struct {
 
 func NewCriterionResponse(criterion WellsCriterion, currentPhysicianID int) CriterionResponse {
 	isMine := 0
-	if criterion.CreatorID != nil && *criterion.CreatorID == currentPhysicianID {
+	if criterion.CreatorID == currentPhysicianID {
 		isMine = 1
 	}
 

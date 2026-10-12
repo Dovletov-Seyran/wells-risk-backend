@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -41,31 +42,24 @@ func (h *Handler) GetCriteria(ctx *gin.Context) {
 func (h *Handler) GetCriterionFeed(ctx *gin.Context) {
 	physicianID := auth.Current().PhysicianID
 
-	criterion, err := h.Repository.GetFirstCriterion(physicianID)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusNotFound, err)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, ds.NewCriterionResponse(criterion, physicianID))
-}
-
-// GetCriterionFeedByID — GET /api/criteria/feed/:id
-func (h *Handler) GetCriterionFeedByID(ctx *gin.Context) {
-	physicianID := auth.Current().PhysicianID
-
-	criterionID, err := parseID(ctx)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
-		return
-	}
-
 	var criterion ds.WellsCriterion
+	var err error
 
-	if ctx.Query("next") == "true" {
-		criterion, err = h.Repository.GetNextCriterion(criterionID, physicianID)
+	// Без ид — первый критерий ленты, с ид — этот критерий или следующий при next=true.
+	if input := ctx.Query("criterion_id"); input == "" {
+		criterion, err = h.Repository.GetFirstCriterion(physicianID)
 	} else {
-		criterion, err = h.Repository.GetPublishedCriterion(criterionID, physicianID)
+		criterionID, parseErr := strconv.Atoi(input)
+		if parseErr != nil {
+			h.errorHandler(ctx, http.StatusBadRequest, parseErr)
+			return
+		}
+
+		if ctx.Query("next") == "true" {
+			criterion, err = h.Repository.GetNextCriterion(criterionID, physicianID)
+		} else {
+			criterion, err = h.Repository.GetPublishedCriterion(criterionID, physicianID)
+		}
 	}
 
 	if err != nil {
@@ -110,7 +104,7 @@ func (h *Handler) CreateCriterion(ctx *gin.Context) {
 		CriterionGroup:   strings.TrimSpace(ctx.Request.FormValue("criterion_group")),
 		CriterionStatus:  ds.StatusDraft,
 		CreatedAt:        time.Now(),
-		CreatorID:        &physicianID,
+		CreatorID:        physicianID,
 	}
 
 	if input := ctx.Request.FormValue("wells_points"); input != "" {

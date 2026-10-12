@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "51c5a33c-44f0-48f9-b6c8-81f8b9f0ee34",
     "name": "Критерии Уэллса — веб-сервис (ЛР3)",
-    "description": "Коллекция запросов к веб-сервису справочника критериев шкалы Уэллса.",
+    "description": "Коллекция из 10 запросов к веб-сервису справочника критериев шкалы Уэллса: по одному запросу на каждый метод.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -11,7 +11,18 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/criteria?min_points=1.5",
+        "url": {
+          "raw": "{{base_url}}/criteria?min_points=1.5",
+          "host": ["{{base_url}}"],
+          "path": ["criteria"],
+          "query": [
+            {
+              "key": "min_points",
+              "value": "1.5",
+              "description": "минимальный вес критерия в баллах Уэллса"
+            }
+          ]
+        },
         "description": "Опубликованные критерии Уэллса с весом не ниже заданного. Поле is_mine = 1, если критерий создан текущим врачом."
       },
       "response": []
@@ -38,7 +49,7 @@
             },
             {
               "key": "criterion_group",
-              "value": "Объективные признаки",
+              "value": "осмотр",
               "type": "text"
             },
             {
@@ -67,7 +78,7 @@
         "method": "GET",
         "header": [],
         "url": "{{base_url}}/criteria/draft",
-        "description": "Черновик текущего врача, ид не указывается. Черновик не может быть больше одного."
+        "description": "Поля черновика текущего врача, ид не указывается. Черновик не может быть больше одного."
       },
       "response": []
     },
@@ -82,27 +93,35 @@
       "response": []
     },
     {
-      "name": "05 GET Лента критериев без ид",
+      "name": "05 GET Лента критериев",
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/criteria/feed",
-        "description": "Первый опубликованный критерий ленты."
+        "url": {
+          "raw": "{{base_url}}/criteria/feed",
+          "host": ["{{base_url}}"],
+          "path": ["criteria", "feed"],
+          "query": [
+            {
+              "key": "criterion_id",
+              "value": "{{criterion_id}}",
+              "description": "ид критерия ленты",
+              "disabled": true
+            },
+            {
+              "key": "next",
+              "value": "true",
+              "description": "следующий критерий после указанного",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Без параметров — первый критерий ленты (ид не указывается). С включёнными criterion_id и next=true — следующий критерий после указанного. Поле is_liked = 1, если текущий врач отметил критерий."
       },
       "response": []
     },
     {
-      "name": "06 GET Лента критериев по ид next=true",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/criteria/feed/{{criterion_id}}?next=true",
-        "description": "Следующий критерий ленты после указанного, после последнего лента закольцовывается."
-      },
-      "response": []
-    },
-    {
-      "name": "07 POST Отметка полезности критерия",
+      "name": "06 POST Лайк критерия",
       "request": {
         "method": "POST",
         "header": [
@@ -113,7 +132,7 @@
           }
         ],
         "url": "{{base_url}}/criteria/{{criterion_id}}/like",
-        "description": "value = 1 ставит отметку текущего врача.",
+        "description": "value = 1 ставит лайк текущего врача, value = 0 отменяет его.",
         "body": {
           "mode": "raw",
           "raw": "{\n    \"value\": 1\n}",
@@ -127,32 +146,7 @@
       "response": []
     },
     {
-      "name": "08 POST Снятие отметки полезности",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": "{{base_url}}/criteria/{{criterion_id}}/like",
-        "description": "value = 0 снимает отметку текущего врача.",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"value\": 0\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "09 DELETE Удаление критерия",
+      "name": "07 DELETE Удаление критерия",
       "request": {
         "method": "DELETE",
         "header": [],
@@ -162,7 +156,7 @@
       "response": []
     },
     {
-      "name": "10 POST Регистрация врача",
+      "name": "08 POST Регистрация врача",
       "request": {
         "method": "POST",
         "header": [
@@ -176,7 +170,7 @@
         "description": "Регистрация нового врача, пароль хранится в виде sha256-хеша.",
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"login\": \"ivanov\",\n    \"password\": \"secret123\",\n    \"full_name\": \"Иванов Пётр Сергеевич\"\n}",
+          "raw": "{\n    \"login\": \"kuznetsov\",\n    \"password\": \"secret123\",\n    \"full_name\": \"Кузнецов Андрей Николаевич\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -187,7 +181,7 @@
       "response": []
     },
     {
-      "name": "11 POST Аутентификация врача (заглушка)",
+      "name": "09 POST Аутентификация врача (заглушка)",
       "request": {
         "method": "POST",
         "header": [
@@ -201,7 +195,7 @@
         "description": "Заглушка для лабораторной работы №4, где метод будет выдавать JWT-токен.",
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"login\": \"doctor\",\n    \"password\": \"doctor123\"\n}",
+          "raw": "{\n    \"login\": \"ivanov\",\n    \"password\": \"ivanov123\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -212,52 +206,12 @@
       "response": []
     },
     {
-      "name": "12 POST Деавторизация врача (заглушка)",
+      "name": "10 POST Деавторизация врача (заглушка)",
       "request": {
         "method": "POST",
         "header": [],
         "url": "{{base_url}}/physicians/logout",
         "description": "Заглушка для лабораторной работы №4, где токен будет попадать в blacklist."
-      },
-      "response": []
-    },
-    {
-      "name": "13 GET Тест: критерий с несуществующим ид",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/criteria/feed/999999999",
-        "description": "Ожидаемый ответ 404."
-      },
-      "response": []
-    },
-    {
-      "name": "14 GET Тест: некорректный фильтр",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/criteria?min_points=abc",
-        "description": "Ожидаемый ответ 400."
-      },
-      "response": []
-    },
-    {
-      "name": "15 POST Тест: критерий без названия",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": "{{base_url}}/criteria",
-        "description": "Ожидаемый ответ 400.",
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "short_description",
-              "value": "без названия",
-              "type": "text"
-            }
-          ]
-        }
       },
       "response": []
     }

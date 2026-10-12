@@ -41,7 +41,6 @@ func StartServer() {
 		{
 			criteria.GET("", criterionHandler.GetCriteria)
 			criteria.GET("/feed", criterionHandler.GetCriterionFeed)
-			criteria.GET("/feed/:id", criterionHandler.GetCriterionFeedByID)
 			criteria.GET("/draft", criterionHandler.GetCriterionDraft)
 			criteria.POST("", criterionHandler.CreateCriterion)
 			criteria.PUT("/:id/publish", criterionHandler.PublishCriterion)
