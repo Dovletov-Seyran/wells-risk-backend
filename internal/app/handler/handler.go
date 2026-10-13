@@ -30,13 +30,13 @@ func currentPhysicianID(ctx *gin.Context) int {
 	return ctx.GetInt(PhysicianIDKey)
 }
 
-// errorHandler пишет причину в лог сервера и возвращает клиенту код ответа.
-func (h *Handler) errorHandler(ctx *gin.Context, statusCode int, err error) {
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	ctx.Status(statusCode)
+// errorHandler для более удобного вывода ошибок
+func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error) {
+	logrus.Error(err.Error())
+	ctx.JSON(errorStatusCode, gin.H{
+		"status":      "error",
+		"description": err.Error(),
+	})
 }
 
 // parseID разбирает ид критерия из пути.

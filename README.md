@@ -8,16 +8,18 @@
 ```bash
 docker compose up -d          # PostgreSQL, MinIO, Redis, Adminer
 go run ./cmd/migrate          # миграции и врач по умолчанию
-go run ./cmd/wells            # веб-сервис на http://localhost:8080
+go run ./cmd/wells            # веб-сервис на http://localhost:18080
 ```
 
-Swagger: http://localhost:8080/swagger/index.html. Документация генерируется из комментариев к методам:
+Swagger: http://localhost:18080/swagger/index.html. Документация генерируется из комментариев к методам:
 
 ```bash
 swag init -g cmd/wells/main.go --parseInternal
 ```
 
-Настройки сервиса и таймауты Redis — в `config/config.toml`, переменные окружения — в `.env`:
+Порты: веб-сервис 18080, PostgreSQL 15432, MinIO 19000 (консоль 19001), Adminer 18081, Redis 6379.
+
+Настройки сервиса (адрес и порт), JWT и таймауты Redis — в `config/config.toml`, переменные окружения — в `.env`:
 
 | Переменная | Назначение |
 |---|---|
@@ -60,7 +62,7 @@ swag init -g cmd/wells/main.go --parseInternal
 | Метод | URL | Авторизация | Параметры | Ответ | Коды |
 |---|---|---|---|---|---|
 | POST | `/api/physicians/register` | — | JSON: `login`, `password`, `full_name` | `{"ok": true}` | 200, 400, 409, 500 |
-| POST | `/api/physicians/login` | — | JSON: `login`, `password` | `{"expires_in", "access_token", "token_type": "Bearer"}` | 200, 400, 403, 500 |
+| POST | `/api/physicians/login` | — | JSON: `login`, `password` | `{"expires_in", "access_token", "token_type": "Bearer"}`; неверный логин или пароль — 403 | 200, 400, 403, 500 |
 | POST | `/api/physicians/logout` | JWT | заголовок `Authorization` | пустое тело, токен в blacklist Redis | 200, 400, 403, 500 |
 
 ### Правила
@@ -96,7 +98,7 @@ swag init -g cmd/wells/main.go --parseInternal
 | Столбец | Тип | Описание |
 |---|---|---|
 | `physician_id` | serial, PK | идентификатор врача |
-| `physician_uuid` | uuid, unique | uuid врача, передаётся в JWT |
+| `physician_uuid` | uuid, not null, unique | uuid врача, передаётся в JWT |
 | `login` | varchar(50), not null, unique | логин |
 | `password` | varchar(100), not null | sha1-хеш пароля |
 | `full_name` | varchar(150) | ФИО врача |

@@ -9,7 +9,7 @@ import (
 	"wells-risk-backend/internal/app/role"
 )
 
-var filesBaseURL = "http://localhost:9000/wells-criteria"
+var filesBaseURL = "http://localhost:19000/wells-criteria"
 
 func SetFilesBaseURL(baseURL string) {
 	if baseURL != "" {

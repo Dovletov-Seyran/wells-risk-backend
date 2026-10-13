@@ -71,7 +71,7 @@ definitions:
     required:
     - value
     type: object
-host: localhost:8080
+host: localhost:18080
 info:
   contact:
     email: dovletovsejran7@gmail.com

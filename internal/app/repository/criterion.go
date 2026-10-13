@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"time"
+
+	"gorm.io/gorm"
 
 	"wells-risk-backend/internal/app/ds"
 )
@@ -64,8 +67,12 @@ func (r *Repository) GetNextCriterion(afterCriterionID, physicianID int) (ds.Wel
 		Where("criterion_status = ? AND criterion_id > ?", ds.StatusPublished, afterCriterionID).
 		Order("criterion_id").
 		First(&criterion).Error
-	if err != nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// после последнего критерия лента начинается сначала
 		return r.GetFirstCriterion(physicianID)
+	}
+	if err != nil {
+		return ds.WellsCriterion{}, err
 	}
 
 	return r.withLikes(criterion, physicianID)

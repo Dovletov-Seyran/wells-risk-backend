@@ -15,7 +15,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "localhost:18080",
     "basePath": "/",
     "paths": {
         "/api/criteria": {

@@ -4,20 +4,22 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
 
-	"wells-risk-backend/docs"
+	_ "wells-risk-backend/docs"
 	"wells-risk-backend/internal/app/ds"
 	"wells-risk-backend/internal/app/role"
 )
@@ -26,11 +28,6 @@ func (a *Application) StartServer() {
 	log.Println("Server start up")
 
 	r := gin.Default()
-
-	// Swagger отправляет запросы на тот порт, на котором запущен сервис.
-	if port := os.Getenv("PORT"); port != "" {
-		docs.SwaggerInfo.Host = "localhost:" + port
-	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -60,7 +57,10 @@ func (a *Application) StartServer() {
 		}
 	}
 
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	serverAddress := fmt.Sprintf("%s:%d", a.config.ServiceHost, a.config.ServicePort)
+	if err := r.Run(serverAddress); err != nil {
+		logrus.Fatal(err)
+	}
 
 	log.Println("Server down")
 }
@@ -99,6 +99,10 @@ func (a *Application) Login(gCtx *gin.Context) {
 	}
 
 	physician, err := a.repo.GetPhysicianByLogin(req.Login)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		gCtx.AbortWithStatus(http.StatusForbidden) // такого врача нет — доступ запрещен, как при неверном пароле
+		return
+	}
 	if err != nil {
 		gCtx.AbortWithError(http.StatusInternalServerError, err)
 		return

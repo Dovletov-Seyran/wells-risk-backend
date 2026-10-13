@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -139,7 +140,7 @@ func (h *Handler) CreateCriterion(ctx *gin.Context) {
 
 	name := strings.TrimSpace(ctx.Request.FormValue("criterion_name"))
 	if name == "" {
-		h.errorHandler(ctx, http.StatusBadRequest, nil)
+		h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("не указано название критерия"))
 		return
 	}
 
@@ -196,7 +197,7 @@ func (h *Handler) CreateCriterion(ctx *gin.Context) {
 	}
 
 	if drafts > 0 {
-		h.errorHandler(ctx, http.StatusConflict, nil)
+		h.errorHandler(ctx, http.StatusConflict, fmt.Errorf("у врача уже есть черновик критерия"))
 		return
 	}
 
@@ -327,7 +328,7 @@ func (h *Handler) LikeCriterion(ctx *gin.Context) {
 	}
 
 	if *request.Value != 0 && *request.Value != 1 {
-		h.errorHandler(ctx, http.StatusBadRequest, nil)
+		h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("value должно быть 0 или 1"))
 		return
 	}
 

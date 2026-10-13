@@ -55,13 +55,21 @@ func main() {
 		}
 	}
 
-	// Роль модератора переносим из прежнего признака is_moderator.
+	if err := db.Migrator().AlterColumn(&ds.Physician{}, "PhysicianUUID"); err != nil {
+		log.Fatalf("ошибка изменения столбца physician_uuid: %v", err)
+	}
+
+	// Роль модератора переносим из прежнего признака is_moderator, после чего столбец удаляем.
 	if db.Migrator().HasColumn(&ds.Physician{}, "is_moderator") {
 		err := db.Model(&ds.Physician{}).
 			Where("is_moderator = ?", true).
 			Update("role", role.Moderator).Error
 		if err != nil {
 			log.Fatalf("ошибка переноса роли модератора: %v", err)
+		}
+
+		if err := db.Migrator().DropColumn(&ds.Physician{}, "is_moderator"); err != nil {
+			log.Fatalf("ошибка удаления столбца is_moderator: %v", err)
 		}
 	}
 
